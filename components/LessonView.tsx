@@ -58,6 +58,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   const hasVideo = !!parentModule?.videoUrl;
+  
+  const isSubmitDisabled = isSubmitting || (lesson.homeworkType === 'TEXT' ? !inputText.trim() : !selectedFile);
 
   return (
     <div className="flex flex-col min-h-screen pb-32 w-full animate-slide-in">
@@ -151,12 +153,16 @@ export const LessonView: React.FC<LessonViewProps> = ({
                             {selectedFile ? (
                                 <div className="flex flex-col items-center">
                                     <span className="text-[#00B050] text-2xl mb-2">✓</span>
-                                    <span className="text-[#00B050] font-bold text-xs">Материал загружен</span>
+                                    <span className="text-[#00B050] font-bold text-xs">
+                                        {lesson.homeworkType === 'FILE' ? 'PDF загружен' : 'Материал загружен'}
+                                    </span>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center">
                                     <span className="text-white/40 text-2xl mb-2">+</span>
-                                    <span className="text-white/40 text-xs uppercase font-bold tracking-wide">Загрузить файл</span>
+                                    <span className="text-white/40 text-xs uppercase font-bold tracking-wide">
+                                        {lesson.homeworkType === 'FILE' ? 'Загрузить PDF' : 'Загрузить файл'}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -171,10 +177,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
                     <button 
                         onClick={handleSubmit} 
-                        disabled={isSubmitting} 
+                        disabled={isSubmitDisabled} 
                         className="w-full py-4 bg-white text-black rounded-xl font-black text-xs uppercase tracking-[0.15em] hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
-                        {isSubmitting ? 'Анализ...' : 'Отправить рапорт'}
+                        {isSubmitting ? 'Анализ...' : 'Отправить задание'}
                     </button>
                 </div>
             </div>

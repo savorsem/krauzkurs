@@ -44,6 +44,41 @@ export const createArenaSession = (clientRole: string, objective: string): Chat 
   });
 };
 
+export const getArenaHint = async (
+  clientRole: string, 
+  objective: string, 
+  lastClientMessage: string, 
+  userDraft: string
+): Promise<string | null> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const prompt = `
+      Context: Sales Roleplay.
+      Client Role: ${clientRole}
+      User Goal: ${objective}
+      Last Client Message: "${lastClientMessage}"
+      User is typing: "${userDraft}"
+      
+      Task: Act as a sales coach whispering a hint.
+      Analyze the user's draft. Is it aggressive? Weak? Good? 
+      Provide a VERY SHORT (max 8 words) tactical hint or correction. 
+      If it's good, say "Good tactic".
+      Lang: Russian.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: { maxOutputTokens: 20 } 
+    });
+
+    return response.text || null;
+  } catch (error) {
+    console.error('Hint Error', error);
+    return null;
+  }
+};
+
 export const evaluateArenaBattle = async (history: { role: string; text: string }[], objective: string): Promise<string> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -117,7 +152,7 @@ export const checkHomeworkWithAI = async (
       });
   
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image', // Supports text, images, video and PDF
+        model: 'gemini-3-flash-preview', 
         contents: { parts },
         config: {
             responseMimeType: "application/json"

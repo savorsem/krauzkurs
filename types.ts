@@ -7,22 +7,23 @@ export interface Lesson {
   description: string;
   content: string;
   xpReward: number;
-  
-  // New configuration fields
   homeworkType: HomeworkType;
-  homeworkTask: string; // Description displayed to student
-  aiGradingInstruction: string; // Hidden instruction for the AI agent
+  homeworkTask: string;
+  aiGradingInstruction: string;
 }
+
+export type ModuleCategory = 'SALES' | 'PSYCHOLOGY' | 'TACTICS' | 'GENERAL';
 
 export interface Module {
   id: string;
   title: string;
   description: string;
   minLevel: number;
+  category: ModuleCategory;
   lessons: Lesson[];
   imageUrl: string;
-  videoUrl?: string; // Link to the video course file (YouTube/Direct)
-  pdfUrl?: string;   // Link to the PDF resource
+  videoUrl?: string;
+  pdfUrl?: string;
 }
 
 export type UserRole = 'STUDENT' | 'CURATOR' | 'ADMIN';
@@ -41,17 +42,11 @@ export interface NotificationSettings {
   chatNotifications: boolean;
 }
 
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  isUnlocked: boolean;
-}
-
 export interface UserProgress {
   id?: string;
-  instagramUsername?: string;
+  telegramId?: string; // Replaces generic ID for Telegram users
+  telegramUsername?: string; // Replaces instagramUsername
+  password?: string; // Added for local auth
   name: string;
   role: UserRole;
   isAuthenticated: boolean;
@@ -73,12 +68,28 @@ export interface UserProgress {
   notifications: NotificationSettings;
 }
 
+export interface AppIntegrations {
+  telegramBotToken?: string;
+  googleDriveFolderId?: string;
+  crmWebhookUrl?: string;
+  aiModelVersion?: string;
+}
+
+export interface AppFeatures {
+  enableRealTimeSync: boolean;
+  autoApproveHomework: boolean;
+  maintenanceMode: boolean;
+  allowStudentChat: boolean;
+  publicLeaderboard: boolean;
+}
+
 export interface AppConfig {
   appName: string;
   appDescription: string;
   primaryColor: string;
   systemInstruction: string;
-  driveFolderId?: string; 
+  integrations: AppIntegrations;
+  features: AppFeatures;
 }
 
 export enum EventType {

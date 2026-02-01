@@ -7,6 +7,7 @@ export const COURSE_MODULES: Module[] = [
     title: 'Модуль 1: Спартанский Отбор',
     description: 'Философия элиты. Здесь слабые отсеются, а сильные начнут путь.',
     minLevel: 1,
+    category: 'GENERAL',
     imageUrl: 'https://picsum.photos/id/1/400/200',
     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Sample Video
     pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Sample PDF
@@ -14,7 +15,7 @@ export const COURSE_MODULES: Module[] = [
       {
         id: 'l1-1',
         title: 'Кто управляет миром?',
-        description: 'Пойми, кто на самом деле диктует правила в мире больших денег.',
+        description: 'Узнай, почему продавцы — это элита бизнеса, и как этот навык открывает любые двери в мире больших денег.',
         content: `Если ты думаешь, что деньгами управляют производители или директора — ты ошибаешься.
         Спойлер: Деньгами управляют те, кто умеет продавать.`,
         xpReward: 100,
@@ -25,7 +26,7 @@ export const COURSE_MODULES: Module[] = [
       {
         id: 'l1-2',
         title: 'Кодекс Воина Продаж',
-        description: 'Твой устав и моральный кодекс.',
+        description: 'Фундаментальные принципы чести и дисциплины. Кодекс, который отличает профессионала от любителя.',
         content: `Менеджер по продажам — это не "продавец". Это человек, который помогает принять решение.`,
         xpReward: 100,
         homeworkType: 'TEXT',
@@ -39,6 +40,7 @@ export const COURSE_MODULES: Module[] = [
     title: 'Модуль 2: Арсенал Воина',
     description: 'Психология противника и стратегия боя (Воронка).',
     minLevel: 2,
+    category: 'TACTICS',
     imageUrl: 'https://picsum.photos/id/20/400/200',
     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     pdfUrl: '#',
@@ -46,7 +48,7 @@ export const COURSE_MODULES: Module[] = [
       {
         id: 'l2-1',
         title: 'Разведка: Типы клиентов',
-        description: 'Научись отличать союзника от цели.',
+        description: 'Классификация психотипов клиентов. Как мгновенно считывать собеседника и выбирать правильную тактику общения.',
         content: 'В бою важно знать врага в лицо. Мы разберем 4 типа личности.',
         xpReward: 150,
         homeworkType: 'TEXT',
@@ -56,7 +58,7 @@ export const COURSE_MODULES: Module[] = [
       {
         id: 'l2-2',
         title: 'Карта Битвы: Воронка',
-        description: 'Твой генеральный план наступления.',
+        description: 'Пошаговая стратегия ведения сделки: от первого контакта до закрытия. Твоя карта боевых действий.',
         content: 'Воронка продаж — это твой план наступления.',
         xpReward: 150,
         homeworkType: 'PHOTO',

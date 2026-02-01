@@ -1,113 +1,348 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { UserRole } from '../types';
 import { generateSpartanAvatar } from '../services/geminiService';
-import { Logger } from '../services/logger';
+import { telegram } from '../services/telegramService';
+import { Button } from './Button';
+import { UserProgress } from '../types';
 
 interface AuthProps {
   onLogin: (data: any) => void;
+  existingUsers?: UserProgress[];
 }
 
-type AuthStep = 'LOGIN_CHOICE' | 'INSTA_LOGIN' | 'ONBOARDING_INFO' | 'ONBOARDING_PHOTO' | 'ONBOARDING_STYLE' | 'GENERATING';
+type AuthStep = 'AUTH_FORM' | 'IDENTITY' | 'SCANNING' | 'CUSTOMIZATION' | 'FINALIZING';
 
-const ARMOR_STYLES = [{ id: 'Classic Bronze', label: 'Классика', icon: '🏺' }, { id: 'Midnight Stealth', label: 'Полночь', icon: '🌑' }, { id: 'Golden God', label: 'Золотой Бог', icon: '👑' }, { id: 'Futuristic Chrome', label: 'Кибер', icon: '🦾' }];
-const BACKGROUND_STYLES = [{ id: 'Ancient Battlefield', label: 'Поле битвы', icon: '⚔️' }, { id: 'Temple of Olympus', label: 'Храм', icon: '🏛️' }, { id: 'Stormy Peak', label: 'Буря', icon: '⚡' }, { id: 'Volcanic Gates', label: 'Вулкан', icon: '🔥' }];
+const ARMOR_STYLES = [
+  { id: 'Classic Bronze', label: 'Legionnaire', icon: '🏺', desc: 'Standard issue.' }, 
+  { id: 'Midnight Stealth', label: 'Shadow Ops', icon: '🌑', desc: 'For covert missions.' }, 
+  { id: 'Golden God', label: 'Commander', icon: '👑', desc: 'Elite status only.' }, 
+  { id: 'Futuristic Chrome', label: 'Cyber', icon: '🦾', desc: 'Advanced tech.' }
+];
 
-export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
-  const [step, setStep] = useState<AuthStep>('LOGIN_CHOICE');
-  const [instagramUser, setInstagramUser] = useState('');
+export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
+  const [step, setStep] = useState<AuthStep>('AUTH_FORM');
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  
+  // Credentials
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // User Profile Data (for Registration)
   const [realName, setRealName] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [armorStyle, setArmorStyle] = useState(ARMOR_STYLES[0].id);
-  const [backgroundStyle, setBackgroundStyle] = useState(BACKGROUND_STYLES[0].id);
-  const [error, setError] = useState('');
+  
+  // UI State
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [isShake, setIsShake] = useState(false);
   const [loadingText, setLoadingText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleInstagramLogin = () => setStep('INSTA_LOGIN');
-  const submitInstaLogin = () => { if (!instagramUser.trim()) { setError('Введите имя'); return; } setStep('ONBOARDING_INFO'); };
-  const submitUserInfo = () => { if (!realName.trim()) { setError('Представьтесь'); return; } setStep('ONBOARDING_PHOTO'); };
-  
+  // Pre-fill username if available from Telegram
+  useEffect(() => {
+      if (telegram.isAvailable && telegram.user?.username && step === 'AUTH_FORM' && !username) {
+          setUsername(telegram.user.username);
+      }
+      if (telegram.isAvailable && telegram.user && !realName) {
+           setRealName(`${telegram.user.first_name} ${telegram.user.last_name || ''}`.trim());
+      }
+  }, []);
+
+  // Validation Helpers
+  const handleError = (field: string, msg: string) => {
+    setErrors(prev => ({ ...prev, [field]: msg }));
+    setIsShake(true);
+    telegram.haptic('error');
+    setTimeout(() => setIsShake(false), 500);
+  };
+
+  // Step Handlers
+  const handleAuthSubmit = () => {
+    setErrors({});
+    const cleanUsername = username.trim().replace('@', '');
+    const cleanPassword = password.trim();
+
+    if (!cleanUsername) { handleError('username', 'Username required'); return; }
+    if (!cleanPassword) { handleError('password', 'Password required'); return; }
+
+    // 1. ADMIN CHECK (Hardcoded)
+    if (cleanUsername === 'admin' && cleanPassword === '55555sa5') {
+        telegram.haptic('success');
+        onLogin({
+            role: 'ADMIN',
+            name: 'Commander',
+            telegramUsername: 'admin',
+            isRegistration: false,
+            // Mock data for admin to skip generation
+            avatarUrl: 'https://ui-avatars.com/api/?name=Admin&background=1F2128&color=fff',
+            armorStyle: 'Golden God' 
+        });
+        return;
+    }
+
+    if (isRegisterMode) {
+        // REGISTRATION FLOW
+        const userExists = existingUsers.some(u => u.telegramUsername?.toLowerCase() === cleanUsername.toLowerCase());
+        if (userExists) {
+            handleError('username', 'Username already taken');
+            return;
+        }
+        if (cleanPassword.length < 4) {
+             handleError('password', 'Password too short');
+             return;
+        }
+
+        telegram.haptic('light');
+        setStep('IDENTITY');
+    } else {
+        // LOGIN FLOW
+        const user = existingUsers.find(u => u.telegramUsername?.toLowerCase() === cleanUsername.toLowerCase());
+        
+        if (!user) {
+            handleError('username', 'User not found. Register?');
+            return;
+        }
+        
+        // Simple string comparison for prototype (In real app, hash this!)
+        if (user.password !== cleanPassword) {
+            handleError('password', 'Invalid Password');
+            return;
+        }
+
+        telegram.haptic('success');
+        // Log in immediately with stored data
+        onLogin({
+            ...user,
+            isRegistration: false
+        });
+    }
+  };
+
+  const handleIdentitySubmit = () => {
+    if (!realName.trim()) { handleError('name', 'Name Required'); return; }
+    if (!selectedImage) { handleError('photo', 'Photo Required'); return; }
+    
+    setStep('SCANNING');
+    telegram.haptic('success');
+    setLoadingText('ANALYZING BIOMETRICS...');
+    // Mock Scan Duration
+    setTimeout(() => {
+        telegram.haptic('medium');
+        setStep('CUSTOMIZATION');
+    }, 2500);
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) { handleError('photo', 'File too large (Max 5MB)'); return; }
       const reader = new FileReader();
-      reader.onloadend = () => { setSelectedImage(reader.result as string); setStep('ONBOARDING_STYLE'); };
+      reader.onloadend = () => { 
+          setSelectedImage(reader.result as string); 
+          setErrors(prev => ({...prev, photo: ''}));
+          telegram.haptic('selection');
+      };
       reader.readAsDataURL(file);
     }
   };
 
   const handleFinalize = async () => {
-    if (!selectedImage) return;
-    setStep('GENERATING');
-    setLoadingText('Создание 3D аватара...');
+    setStep('FINALIZING');
+    telegram.haptic('heavy');
+    const loadingMessages = ['FORGING ARMOR...', 'SYNCING NEURAL LINK...', 'ESTABLISHING COMMS...'];
+    
+    let msgIdx = 0;
+    const interval = setInterval(() => {
+        setLoadingText(loadingMessages[msgIdx % loadingMessages.length]);
+        msgIdx++;
+    }, 1500);
+
     try {
-        const base64Data = selectedImage.split(',')[1];
-        const avatarUrl = await generateSpartanAvatar(base64Data, 1, armorStyle, backgroundStyle);
-        onLogin({ role: 'STUDENT', name: realName, instagram: instagramUser, originalPhoto: base64Data, avatarUrl, armorStyle, backgroundStyle });
-    } catch (e) { setError('Error'); setStep('ONBOARDING_STYLE'); }
+        const base64Data = selectedImage!.split(',')[1];
+        const avatarUrl = await generateSpartanAvatar(base64Data, 1, armorStyle);
+        
+        clearInterval(interval);
+        telegram.haptic('success');
+        
+        // Registration Complete
+        onLogin({ 
+            role: 'STUDENT', 
+            name: realName, 
+            telegramUsername: username.trim().replace('@', ''),
+            password: password.trim(), // Storing password locally
+            originalPhoto: base64Data, 
+            avatarUrl, 
+            armorStyle,
+            isRegistration: true
+        });
+    } catch (e) { 
+        clearInterval(interval);
+        handleError('global', 'Connection failed. Try again.'); 
+        setStep('CUSTOMIZATION'); 
+    }
   };
 
+  // --- RENDERERS ---
+
+  const renderAuthForm = () => (
+    <div className={`space-y-6 w-full max-w-xs mx-auto animate-fade-in ${isShake ? 'animate-shake' : ''}`}>
+       <div className="text-center mb-8">
+           <div className="w-20 h-20 bg-[#6C5DD3] rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-[0_0_20px_rgba(108,93,211,0.5)] mb-4">
+             🛡️
+           </div>
+           <h1 className="text-3xl font-black text-white tracking-tight">SALES<span className="text-[#6C5DD3]">PRO</span></h1>
+           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em]">{isRegisterMode ? 'ENLISTMENT' : 'ACCESS TERMINAL'}</p>
+       </div>
+
+       <div className="space-y-4">
+           {/* Username Input */}
+           <div className="group">
+              <label className="text-[10px] font-bold text-[#6C5DD3] uppercase ml-1 mb-1 block">Telegram Nickname</label>
+              <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">@</span>
+                  <input 
+                    value={username} 
+                    onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} 
+                    className={`w-full bg-[#131419] border ${errors.username ? 'border-red-500' : 'border-white/10'} rounded-xl py-4 pl-9 pr-4 text-white font-bold outline-none focus:border-[#6C5DD3] transition-colors`}
+                    placeholder="username"
+                  />
+              </div>
+              {errors.username && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.username}</p>}
+          </div>
+
+          {/* Password Input */}
+          <div className="group">
+              <label className="text-[10px] font-bold text-[#6C5DD3] uppercase ml-1 mb-1 block">Password</label>
+              <input 
+                type="password"
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className={`w-full bg-[#131419] border ${errors.password ? 'border-red-500' : 'border-white/10'} rounded-xl py-4 px-4 text-white font-bold outline-none focus:border-[#6C5DD3] transition-colors`}
+                placeholder="••••••••"
+              />
+              {errors.password && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.password}</p>}
+          </div>
+       </div>
+
+       <div className="pt-4 space-y-3">
+          <Button fullWidth onClick={handleAuthSubmit} icon={isRegisterMode ? "📝" : "⚡"}>
+              {isRegisterMode ? 'CREATE PROFILE' : 'LOGIN'}
+          </Button>
+          
+          <button 
+            onClick={() => { setIsRegisterMode(!isRegisterMode); setErrors({}); }}
+            className="w-full text-center text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+          >
+              {isRegisterMode ? 'Already have an account? Login' : 'New recruit? Register'}
+          </button>
+       </div>
+    </div>
+  );
+
+  const renderIdentity = () => (
+      <div className={`space-y-6 w-full animate-slide-in ${isShake ? 'animate-shake' : ''}`}>
+           <div className="text-center mb-8">
+              <h2 className="text-2xl font-black text-white">BIOMETRICS</h2>
+              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Setup User Profile</p>
+          </div>
+
+          <div className="group">
+              <label className="text-[10px] font-bold text-[#6C5DD3] uppercase ml-1 mb-1 block">Callsign (Real Name)</label>
+              <input 
+                value={realName} 
+                onChange={e => setRealName(e.target.value)} 
+                className={`w-full bg-[#131419] border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-xl py-4 px-4 text-white font-bold outline-none focus:border-[#6C5DD3] transition-colors text-center`}
+                placeholder="Ex. Alex Mercer"
+              />
+          </div>
+
+          <div 
+            onClick={() => fileInputRef.current?.click()} 
+            className={`w-40 h-40 mx-auto rounded-full bg-[#131419] border-2 border-dashed ${errors.photo ? 'border-red-500' : 'border-white/20'} hover:border-[#6C5DD3] flex items-center justify-center cursor-pointer relative overflow-hidden transition-all group`}
+          >
+              {selectedImage ? (
+                  <img src={selectedImage} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+              ) : (
+                  <div className="text-center">
+                      <span className="text-3xl block mb-2 opacity-50">📸</span>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase">Tap to Upload</span>
+                  </div>
+              )}
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+          </div>
+          {errors.photo && <p className="text-red-500 text-[10px] font-bold text-center">{errors.photo}</p>}
+
+          <Button fullWidth onClick={handleIdentitySubmit} className="mt-8">SCAN & VERIFY</Button>
+          <button onClick={() => setStep('AUTH_FORM')} className="w-full text-center text-xs font-bold text-slate-500 mt-4">Back</button>
+      </div>
+  );
+
+  const renderScanning = () => (
+      <div className="text-center animate-fade-in w-full">
+           <div className="relative w-48 h-48 mx-auto mb-8">
+                {selectedImage && <img src={selectedImage} className="w-full h-full rounded-full object-cover opacity-50 grayscale" />}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#6C5DD3]/0 via-[#6C5DD3]/50 to-[#6C5DD3]/0 h-[20%] w-full animate-scanline border-b-2 border-[#6C5DD3] shadow-[0_0_20px_#6C5DD3]"></div>
+                <div className="absolute inset-0 border-4 border-[#6C5DD3]/20 rounded-full border-t-[#6C5DD3] animate-spin"></div>
+           </div>
+           <h3 className="text-xl font-black text-white animate-pulse">{loadingText}</h3>
+           <p className="text-[#6C5DD3] font-mono text-xs mt-2">ID: {Date.now().toString().slice(-8)}</p>
+           <style>{`@keyframes scanline { 0% { top: 0; } 100% { top: 100%; } } .animate-scanline { animation: scanline 1.5s linear infinite; }`}</style>
+      </div>
+  );
+
+  const renderCustomization = () => (
+      <div className="space-y-6 w-full animate-slide-in">
+           <div className="text-center mb-6">
+              <h2 className="text-xl font-black text-white">SELECT GEAR</h2>
+              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Choose your combat skin</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+              {ARMOR_STYLES.map(style => (
+                  <button 
+                    key={style.id} 
+                    onClick={() => { setArmorStyle(style.id); telegram.haptic('selection'); }} 
+                    className={`p-4 rounded-2xl border transition-all text-left relative overflow-hidden group
+                        ${armorStyle === style.id ? 'bg-[#6C5DD3] border-[#6C5DD3] text-white shadow-lg shadow-[#6C5DD3]/30' : 'bg-[#131419] border-white/10 text-slate-400 hover:border-white/30'}
+                    `}
+                  >
+                      <div className="text-2xl mb-2">{style.icon}</div>
+                      <div className="font-bold text-xs uppercase mb-1">{style.label}</div>
+                      <div className={`text-[9px] font-medium leading-tight ${armorStyle === style.id ? 'text-white/70' : 'text-slate-600'}`}>{style.desc}</div>
+                      {armorStyle === style.id && <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full shadow-[0_0_5px_white]"></div>}
+                  </button>
+              ))}
+          </div>
+
+          <Button fullWidth onClick={handleFinalize} className="mt-6" icon="⚡">INITIATE GENERATION</Button>
+      </div>
+  );
+
+  const renderFinalizing = () => (
+    <div className="text-center w-full animate-fade-in py-10">
+        <div className="w-24 h-24 mx-auto mb-8 relative">
+            <div className="absolute inset-0 border-4 border-[#1F2128] rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-t-[#6C5DD3] rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">⚙️</div>
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2">{loadingText}</h3>
+        <p className="text-slate-500 text-xs">Utilizing Neural AI Cluster. Please wait.</p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#F2F4F6]">
-         <div className="w-full max-w-sm bg-white p-8 rounded-[2.5rem] shadow-soft relative">
-             {step === 'LOGIN_CHOICE' && (
-                <div className="text-center mb-8 mt-4">
-                    <div className="w-20 h-20 bg-[#1A1A1A] rounded-[1.5rem] mx-auto mb-4 flex items-center justify-center text-4xl shadow-lg">🛡️</div>
-                    <h1 className="text-2xl font-black text-[#1A1A1A]">SalesPro</h1>
-                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Elite Academy</p>
-                </div>
-             )}
-             
-             {step === 'LOGIN_CHOICE' && (
-                <div className="space-y-4">
-                    <button onClick={handleInstagramLogin} className="w-full bg-[#1A1A1A] text-white p-4 rounded-2xl font-bold">Войти через Instagram</button>
-                    <button onClick={() => onLogin({role: 'ADMIN', name: 'Admin'})} className="w-full text-slate-400 text-xs font-bold py-2">Вход для администраторов</button>
-                </div>
-             )}
-
-             {step === 'INSTA_LOGIN' && (
-                <div className="space-y-4">
-                    <h3 className="font-bold text-center">Instagram Login</h3>
-                    <input value={instagramUser} onChange={e => setInstagramUser(e.target.value)} placeholder="@username" className="w-full bg-[#F2F4F6] rounded-xl p-4 text-center font-bold outline-none" />
-                    <button onClick={submitInstaLogin} className="w-full bg-[#1A1A1A] text-white py-3 rounded-xl font-bold">Далее</button>
-                </div>
-             )}
-
-             {step === 'ONBOARDING_INFO' && (
-                <div className="space-y-4">
-                    <h3 className="font-bold text-center">Как вас зовут?</h3>
-                    <input value={realName} onChange={e => setRealName(e.target.value)} placeholder="Имя Фамилия" className="w-full bg-[#F2F4F6] rounded-xl p-4 text-center font-bold outline-none" />
-                    <button onClick={submitUserInfo} className="w-full bg-[#1A1A1A] text-white py-3 rounded-xl font-bold">Далее</button>
-                </div>
-             )}
-
-             {step === 'ONBOARDING_PHOTO' && (
-                <div className="space-y-6 text-center">
-                    <h3 className="font-bold">Фото профиля</h3>
-                    <div onClick={() => fileInputRef.current?.click()} className="w-32 h-32 mx-auto bg-[#F2F4F6] rounded-full flex items-center justify-center cursor-pointer hover:bg-slate-200">
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                        <span className="text-3xl text-slate-400">+</span>
-                    </div>
-                </div>
-             )}
-             
-             {step === 'ONBOARDING_STYLE' && (
-                 <div className="space-y-6">
-                     <h3 className="font-bold text-center">Стиль</h3>
-                     <div className="grid grid-cols-2 gap-2">
-                         {ARMOR_STYLES.map(s => <button key={s.id} onClick={() => setArmorStyle(s.id)} className={`p-3 rounded-xl border ${armorStyle === s.id ? 'bg-[#1A1A1A] text-white border-black' : 'border-slate-100'}`}>{s.icon} <span className="text-[10px] uppercase font-bold block">{s.label}</span></button>)}
-                     </div>
-                     <button onClick={handleFinalize} className="w-full bg-[#1A1A1A] text-white py-3 rounded-xl font-bold">Создать</button>
-                 </div>
-             )}
-
-             {step === 'GENERATING' && (
-                 <div className="text-center py-10">
-                     <div className="w-12 h-12 border-4 border-[#1A1A1A] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                     <p className="font-bold text-sm">{loadingText}</p>
-                 </div>
-             )}
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#0F1115] relative overflow-hidden">
+         {/* Background Elements */}
+         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,_rgba(108,93,211,0.15),_transparent_70%)] pointer-events-none"></div>
+         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#FFAB7B]/5 rounded-full blur-[100px] pointer-events-none"></div>
+         
+         <div className="w-full max-w-sm relative z-10">
+             {/* Steps */}
+             {step === 'AUTH_FORM' && renderAuthForm()}
+             {step === 'IDENTITY' && renderIdentity()}
+             {step === 'SCANNING' && renderScanning()}
+             {step === 'CUSTOMIZATION' && renderCustomization()}
+             {step === 'FINALIZING' && renderFinalizing()}
          </div>
     </div>
   );

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { CalendarEvent, EventType } from '../types';
 import { MOCK_EVENTS } from '../constants';
+import { telegram } from '../services/telegramService';
 
 interface CalendarViewProps {
     externalEvents?: CalendarEvent[];
@@ -17,6 +18,30 @@ const getFirstDayOfMonth = (year: number, month: number) => {
 const formatTime = (date: Date | string) => {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+};
+
+// --- ICS Export Logic ---
+const generateICS = (events: CalendarEvent[]) => {
+    let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//SalesPro//SpartanCalendar//EN\n";
+    
+    events.forEach(evt => {
+        const d = new Date(evt.date);
+        const start = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const endD = new Date(d.getTime() + (evt.durationMinutes || 60) * 60000);
+        const end = endD.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+        icsContent += "BEGIN:VEVENT\n";
+        icsContent += `UID:${evt.id}@salespro.app\n`;
+        icsContent += `DTSTAMP:${start}\n`;
+        icsContent += `DTSTART:${start}\n`;
+        icsContent += `DTEND:${end}\n`;
+        icsContent += `SUMMARY:⚔️ ${evt.title}\n`;
+        icsContent += `DESCRIPTION:${evt.description}\n`;
+        icsContent += "END:VEVENT\n";
+    });
+
+    icsContent += "END:VCALENDAR";
+    return icsContent;
 };
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDark = false }) => {
@@ -35,6 +60,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
   const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
   const allEvents = externalEvents && externalEvents.length > 0 ? externalEvents : MOCK_EVENTS;
+
+  const handleExportCalendar = () => {
+    telegram.haptic('success');
+    const icsData = generateICS(allEvents);
+    const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', 'spartan_schedule.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getEventsForDay = (day: number) => {
     return allEvents.filter(e => {
@@ -61,13 +98,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
   return (
     <div className={`flex flex-col h-full animate-fade-in ${isDark ? 'text-white' : 'text-slate-900'}`}>
         {/* Sync Status Badge */}
-        {externalEvents && externalEvents.length > 0 && (
-            <div className="flex justify-center mb-4">
-                <span className="px-3 py-1 bg-[#D4AF37]/10 text-[#D4AF37] text-[9px] font-black uppercase tracking-[0.2em] rounded-full border border-[#D4AF37]/20">
-                   ✓ Синхронизировано со Штабом
-                </span>
-            </div>
-        )}
+        <div className="flex justify-between items-center mb-4">
+            <span className="px-3 py-1 bg-[#D4AF37]/10 text-[#D4AF37] text-[9px] font-black uppercase tracking-[0.2em] rounded-full border border-[#D4AF37]/20">
+               ✓ Sync Active
+            </span>
+            <button 
+                onClick={handleExportCalendar}
+                className="flex items-center gap-1 text-[10px] font-bold text-[#6C5DD3] bg-[#6C5DD3]/10 px-3 py-1 rounded-full hover:bg-[#6C5DD3]/20 transition-colors"
+            >
+                <span>📅</span>
+                <span>Экспорт (.ics)</span>
+            </button>
+        </div>
 
         {/* Calendar Card */}
         <div className={`p-5 rounded-[2.5rem] mb-8 border ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-100 shadow-sm'}`}>
@@ -89,7 +131,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
                 const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
 
                 return (
-                <div key={day} onClick={() => setSelectedDate(new Date(year, month, day))}
+                <div key={day} onClick={() => { setSelectedDate(new Date(year, month, day)); telegram.haptic('selection'); }}
                     className={`aspect-square rounded-[1rem] flex flex-col items-center justify-center relative cursor-pointer transition-all
                     ${isSelected ? 'bg-[#6C5DD3] text-white shadow-lg shadow-[#6C5DD3]/30 scale-105 z-10' : isDark ? 'hover:bg-white/10' : 'hover:bg-slate-50'}
                     ${isToday && !isSelected ? 'border-2 border-[#D4AF37] text-[#D4AF37]' : ''}

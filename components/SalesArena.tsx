@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ArenaScenario, ChatMessage } from '../types';
-import { createArenaSession, sendMessageToGemini, evaluateArenaBattle } from '../services/geminiService';
+import { createArenaSession, sendMessageToGemini, evaluateArenaBattle, getArenaHint } from '../services/geminiService';
 import { Chat } from '@google/genai';
 
 const SCENARIOS: ArenaScenario[] = [
@@ -40,11 +40,39 @@ export const SalesArena: React.FC = () => {
     const [battleResult, setBattleResult] = useState<string | null>(null);
     const [isEvaluating, setIsEvaluating] = useState(false);
     
+    // Real-time Feedback State
+    const [typingHint, setTypingHint] = useState<string | null>(null);
+    const [isHintLoading, setIsHintLoading] = useState(false);
+    
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [history, isLoading]);
+    }, [history, isLoading, typingHint]);
+
+    // Real-time Feedback Debounce
+    useEffect(() => {
+        if (!activeScenario || !inputText || inputText.length < 10) {
+            setTypingHint(null);
+            return;
+        }
+
+        const lastModelMsg = [...history].reverse().find(m => m.role === 'model')?.text || '';
+        
+        const timer = setTimeout(async () => {
+            setIsHintLoading(true);
+            const hint = await getArenaHint(
+                activeScenario.clientRole, 
+                activeScenario.objective, 
+                lastModelMsg, 
+                inputText
+            );
+            if (hint) setTypingHint(hint);
+            setIsHintLoading(false);
+        }, 1000); // 1s debounce
+
+        return () => clearTimeout(timer);
+    }, [inputText, activeScenario, history]);
 
     const startScenario = (scenario: ArenaScenario) => {
         setActiveScenario(scenario);
@@ -57,6 +85,7 @@ export const SalesArena: React.FC = () => {
             timestamp: new Date().toISOString()
         }]);
         setBattleResult(null);
+        setTypingHint(null);
     };
 
     const handleSend = async () => {
@@ -72,6 +101,7 @@ export const SalesArena: React.FC = () => {
         const updatedHistory = [...history, userMsg];
         setHistory(updatedHistory);
         setInputText('');
+        setTypingHint(null); // Clear hint on send
         setIsLoading(true);
 
         const responseText = await sendMessageToGemini(chatSession, userMsg.text);
@@ -208,6 +238,23 @@ export const SalesArena: React.FC = () => {
 
             {/* Input Area */}
             <div className="fixed bottom-0 left-0 right-0 p-5 bg-[#0F1115]/80 backdrop-blur-xl border-t border-white/5 z-20">
+                {/* Typing Hint Bubble */}
+                {(typingHint || isHintLoading) && (
+                    <div className="absolute -top-12 left-6 right-6 flex justify-center pointer-events-none animate-slide-in">
+                        <div className="bg-[#1F2128] border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-xl backdrop-blur-md">
+                            <span className="text-lg">👂</span>
+                            {isHintLoading ? (
+                                <div className="flex gap-1 h-3 items-center">
+                                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></div>
+                                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce delay-75"></div>
+                                </div>
+                            ) : (
+                                <span className="text-xs font-bold text-slate-300 italic">{typingHint}</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+                
                 <div className="max-w-2xl mx-auto flex gap-3">
                     <input
                         value={inputText}

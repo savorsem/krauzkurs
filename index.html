@@ -7,15 +7,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>SalesPro: 300 Spartans</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-body: #F2F4F6;
-        --text-main: #1A1A1A;
-        --primary-black: #0F1115;
-        --accent-peach: #FFB08E;
-        --accent-blue: #4B6BFB;
-        --accent-gold: #D4AF37;
+        --bg-body: #0F1115;
+        --text-main: #FFFFFF;
+        
+        /* Elite Palette */
+        --color-accent: #FFAB7B; /* Spartan Orange */
+        --color-primary: #6C5DD3; /* Royal Purple */
+        --color-success: #00B050; /* Tactical Green */
+        --color-dark: #1F2128;   /* Armor Grey */
+        --color-darker: #131419; /* Deep Void */
+        
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-bg: rgba(31, 33, 40, 0.7);
+
+        --safe-area-top: env(safe-area-inset-top);
+        --safe-area-bottom: env(safe-area-inset-bottom);
       }
 
       body {
@@ -27,66 +37,80 @@
         overflow-x: hidden;
         -webkit-tap-highlight-color: transparent;
         -webkit-font-smoothing: antialiased;
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
       }
 
-      /* Animated Background Layer */
-      .mesh-bg {
+      /* Noise Texture Overlay */
+      .bg-noise {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
         z-index: -1;
-        background-color: #F3F4F6;
-        background-image: 
-          radial-gradient(at 0% 0%, rgba(75, 107, 251, 0.08) 0px, transparent 50%),
-          radial-gradient(at 100% 0%, rgba(255, 176, 142, 0.1) 0px, transparent 50%),
-          radial-gradient(at 100% 100%, rgba(75, 107, 251, 0.08) 0px, transparent 50%),
-          radial-gradient(at 0% 100%, rgba(255, 176, 142, 0.1) 0px, transparent 50%);
-        animation: pulseGradient 15s ease-in-out infinite alternate;
-      }
-
-      @keyframes pulseGradient {
-        0% { transform: scale(1); }
-        100% { transform: scale(1.1); }
+        opacity: 0.04;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
       }
 
       /* Scrollbar cleanup */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
       /* Animation Utilities */
-      .animate-fade-in { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
-      .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+      .animate-slide-in { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+      .animate-pulse-slow { animation: pulseSlow 3s infinite; }
+      .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+      .animate-float { animation: float 6s ease-in-out infinite; }
+
       .delay-100 { animation-delay: 0.1s; }
       .delay-200 { animation-delay: 0.2s; }
       .delay-300 { animation-delay: 0.3s; }
 
       @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
       @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      @keyframes pulseSlow { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+      @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+      @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
-      /* Soft Shadow for Cards */
-      .shadow-soft { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08); }
-      
-      /* Glassmorphism */
-      .glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+      /* Advanced UI Elements */
+      .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       }
       
-      .glass-dark {
-        background: rgba(15, 17, 21, 0.9);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+      .neon-glow {
+        text-shadow: 0 0 10px rgba(255, 171, 123, 0.5);
       }
-
+      
       /* Video Player Wrapper */
-      .player-wrapper { position: relative; padding-top: 56.25%; border-radius: 1.5rem; overflow: hidden; background: #000; }
+      .player-wrapper { position: relative; padding-top: 56.25%; border-radius: 1.5rem; overflow: hidden; background: #000; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5); }
       .react-player { position: absolute; top: 0; left: 0; }
 
+      /* Toast Notification */
+      .toast-container {
+        position: fixed;
+        top: calc(20px + var(--safe-area-top));
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 90%;
+        max-width: 400px;
+        pointer-events: none;
+      }
     </style>
   <script type="importmap">
 {
@@ -102,6 +126,7 @@
 </script>
 </head>
   <body>
+    <div class="bg-noise"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
