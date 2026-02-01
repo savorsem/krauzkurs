@@ -177,6 +177,23 @@ export const checkHomeworkWithAI = async (
     }
   };
 
+// --- AVATAR GENERATION LOGIC ---
+
+// Rich descriptions mapping
+const ARMOR_DESCRIPTIONS: Record<string, string> = {
+    'Classic Bronze': 'Traditional Spartan bronze cuirass with defined muscle sculpting, deep red cape draped over shoulders, leather straps, and Corinthian helmet details on the pauldrons. Battle-worn texture with scratches.',
+    'Midnight Stealth': 'Sleek, matte black obsidian tactical armor, dark grey cowl/hood casting shadows over the forehead, faint purple energy accents in armor crevices, lightweight stealth aesthetic.',
+    'Golden God': 'Highly polished, ceremonial gold plate armor with intricate divine engravings, radiating a faint warm glow, white and gold silk cape, angelic warrior aesthetic.',
+    'Futuristic Chrome': 'High-tech silver chrome plating with segmented plates, neon blue light strips integrated into the chest and shoulders, cybernetic aesthetic, futuristic visor attachment on chest.',
+};
+
+const BACKGROUND_DESCRIPTIONS: Record<string, string> = {
+    'Ancient Battlefield': 'A dusty, epic battlefield at sunset (golden hour), scattered shields and spears in the background, haze and smoke, dramatic cinematic lighting.',
+    'Temple of Olympus': 'Ethereal mountaintop temple, white marble columns in background, bright blue sky with soft clouds, divine bright lighting, bloom effect.',
+    'Stormy Peak': 'Dark, moody mountain peak, rain pouring down, lightning striking in the distance, cold blue and grey color palette, dramatic contrast.',
+    'Volcanic Gates': 'Underground cavern, flowing lava rivers in background, dark rock, ambient orange and red lighting, embers floating in the air.',
+};
+
 export const generateSpartanAvatar = async (
   imageBase64: string, 
   level: number, 
@@ -186,38 +203,33 @@ export const generateSpartanAvatar = async (
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
+    // Resolve rich descriptions (Fallback to default if key missing)
+    const armorPrompt = ARMOR_DESCRIPTIONS[armorStyle] || ARMOR_DESCRIPTIONS['Classic Bronze'];
+    const bgPrompt = BACKGROUND_DESCRIPTIONS[backgroundStyle] || BACKGROUND_DESCRIPTIONS['Ancient Battlefield'];
+
     // Determine visual progression based on level
-    const armorQuality = level < 3 ? 'Basic Recruit (Clean armor)' : level < 7 ? 'Battle-Hardened Veteran (Scratches, dents)' : 'Legendary Commander (Ornate, glowing energy)';
-    const auraPrompt = level > 5 ? 'Subtle divine energy aura around the armor.' : 'No supernatural aura.';
+    const armorQuality = level < 3 ? 'Basic Recruit condition (clean, simple)' : level < 7 ? 'Battle-Hardened Veteran condition (scratches, dents, mud splatter)' : 'Legendary Commander condition (Ornate details, glowing energy)';
+    const auraPrompt = level > 5 ? 'Subtle supernatural power aura surrounding the character.' : 'No supernatural aura.';
 
     const prompt = `
-      Task: Generate a photorealistic 3D stylized avatar (Unreal Engine 5 Metahuman style mixed with Pixar quality).
+      Task: Generate a high-fidelity 3D avatar portrait (Unreal Engine 5 Metahuman style mixed with Pixar quality).
       
-      INPUT FACE: Use the facial features, hair, and eye color from the provided input image. Maintain resemblance.
+      INPUT IMAGE: Use the facial features (eyes, nose, mouth shape, skin tone) from the provided image. The goal is to make the user look like a Spartan warrior version of themselves.
+
+      SUBJECT APPEARANCE:
+      - The character is wearing: ${armorPrompt}
+      - Armor Condition: ${armorQuality}
+      - Special Effect: ${auraPrompt}
       
-      STYLE SETTINGS:
-      - Render: Octane Render, 8k resolution, cinematic lighting, ray tracing.
-      - Theme: Ancient Spartan Warrior with a modern/stylized twist.
-      - Camera: Portrait shot (Head and upper torso), shallow depth of field (bokeh).
+      ENVIRONMENT / BACKGROUND:
+      - ${bgPrompt}
+      - Camera: Close-up portrait (Head and Upper Torso), shallow depth of field (bokeh background).
+      - Lighting: Cinematic, Volumetric lighting matching the background environment.
 
-      CUSTOMIZATION PARAMETERS:
-      1. ARMOR STYLE: "${armorStyle}".
-         - If 'Classic Bronze': Traditional bronze cuirass, red cape, Corinthian influences.
-         - If 'Midnight Stealth': Dark obsidian/matte black armor, hood or shadow cowl, stealthy look.
-         - If 'Golden God': Polished gold plate armor, intricate engravings, shining bright.
-         - If 'Futuristic Chrome': Silver/Chrome plating with slight neon blue accents (Cyber-Spartan).
-      
-      2. BACKGROUND ENVIRONMENT: "${backgroundStyle}".
-         - If 'Ancient Battlefield': Smoky, dusty battlefield, spears in ground, sunset.
-         - If 'Temple of Olympus': White marble columns, blue sky, ethereal light.
-         - If 'Stormy Peak': Dark mountains, rain, lightning strikes in distance.
-         - If 'Volcanic Gates': Lava ambient light, dark rocks, embers in air.
-
-      3. PROGRESSION LEVEL:
-         - Level ${level}: ${armorQuality}.
-         - Effect: ${auraPrompt}
-
-      Constraint: Ensure the face looks heroic, confident, and matches the input person.
+      STYLE:
+      - 8k resolution, Octane Render.
+      - Heroic, confident expression.
+      - Detailed textures (metal, skin pores, fabric cloth).
     `;
 
     const response: GenerateContentResponse = await ai.models.generateContent({

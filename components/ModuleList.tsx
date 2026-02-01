@@ -147,14 +147,12 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                     <div 
                         key={module.id}
                         className={`
-                            relative p-8 rounded-[2.5rem] transition-all duration-500 group
-                            ${isDarkCard 
-                                ? 'bg-[#1F2128] text-white shadow-xl shadow-black/20' 
-                                : 'bg-[#B2AFFE] text-[#1F2128] shadow-xl shadow-[#B2AFFE]/30'
-                            }
+                            relative p-8 rounded-[2.5rem] transition-all duration-500 group overflow-hidden animate-slide-up fill-mode-both
                             ${isLocked 
-                                ? 'cursor-not-allowed opacity-90' 
-                                : 'cursor-pointer hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]'
+                                ? 'bg-[#1F2128]/5 border border-slate-200 grayscale opacity-80 cursor-not-allowed' 
+                                : isDarkCard 
+                                    ? 'bg-[#1F2128] text-white shadow-xl shadow-black/20 cursor-pointer hover:-translate-y-2 hover:shadow-2xl' 
+                                    : 'bg-[#B2AFFE] text-[#1F2128] shadow-xl shadow-[#B2AFFE]/30 cursor-pointer hover:-translate-y-2 hover:shadow-2xl'
                             }
                         `}
                         style={{ animationDelay: `${index * 0.1}s` }}
@@ -167,11 +165,9 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                     >
                          {/* Locked Overlay */}
                          {isLocked && (
-                             <div className="absolute inset-0 bg-[#0F1115]/60 z-20 flex items-center justify-center rounded-[2.5rem] backdrop-blur-[2px]">
-                                <div className="bg-[#1F2128]/90 p-4 rounded-full border border-white/10 backdrop-blur-md shadow-2xl flex items-center gap-3 px-6 transform transition-transform group-hover:scale-110">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-slate-400">
-                                        <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" />
-                                    </svg>
+                             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/20 backdrop-blur-sm rounded-[2.5rem]">
+                                <div className="bg-[#1F2128] p-4 rounded-2xl border border-white/10 shadow-2xl transform transition-transform group-hover:scale-105 flex items-center gap-3 pr-6">
+                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">🔒</div>
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Locked</span>
                                         <span className="text-white font-bold text-xs">Level {module.minLevel} Req.</span>
@@ -192,39 +188,35 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
 
                         {/* Card Header */}
                         <div className="flex justify-between items-start mb-12 relative z-10">
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl border backdrop-blur-md shadow-inner transition-transform duration-500 group-hover:rotate-12 ${isDarkCard ? 'bg-white/10 border-white/10' : 'bg-white/30 border-white/20'}`}>
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl border backdrop-blur-md shadow-inner transition-transform duration-500 group-hover:rotate-12 ${isDarkCard && !isLocked ? 'bg-white/10 border-white/10' : 'bg-white/30 border-white/20'}`}>
                                 {module.category === 'SALES' ? '💰' : module.category === 'PSYCHOLOGY' ? '🧠' : module.category === 'TACTICS' ? '⚔️' : '🎓'}
                             </div>
                             
-                            <div className="relative w-12 h-12">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all shadow-lg ${
-                                    isLocked
-                                      ? 'bg-slate-800 text-slate-600 border-slate-700'
-                                      : isCompleted
-                                        ? 'bg-[#00B050] text-white border-[#00B050]'
-                                        : isDarkCard 
-                                            ? 'bg-[#FFAB7B] text-[#1F2128] border-[#FFAB7B] group-hover:bg-white' 
-                                            : 'bg-white text-[#1F2128] border-white group-hover:bg-[#1F2128] group-hover:text-white'
-                                }`}>
-                                   {isLocked ? (
-                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                                       </svg>
-                                   ) : isCompleted ? (
-                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
-                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                       </svg>
-                                   ) : (
-                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5 ml-0.5 transform group-hover:translate-x-0.5 transition-transform">
-                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                                       </svg>
-                                   )}
+                            {!isLocked && (
+                                <div className="relative w-12 h-12">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all shadow-lg ${
+                                        isCompleted
+                                            ? 'bg-[#00B050] text-white border-[#00B050]'
+                                            : isDarkCard 
+                                                ? 'bg-[#FFAB7B] text-[#1F2128] border-[#FFAB7B] group-hover:bg-white' 
+                                                : 'bg-white text-[#1F2128] border-white group-hover:bg-[#1F2128] group-hover:text-white'
+                                    }`}>
+                                    {isCompleted ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5 ml-0.5 transform group-hover:translate-x-0.5 transition-transform">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                                        </svg>
+                                    )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Card Content */}
-                        <div className={`relative z-10 transition-opacity duration-300 ${isLocked ? 'opacity-30 blur-[1px]' : ''}`}>
+                        <div className={`relative z-10 transition-opacity duration-300 ${isLocked ? 'opacity-30 blur-[2px]' : ''}`}>
                             <div className="flex justify-between items-center mb-2">
                                 <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkCard ? 'text-white/50' : 'text-[#1F2128]/60'}`}>
                                     {isLocked ? `Доступ закрыт` : `${completedCount} из ${totalCount} завершено`}

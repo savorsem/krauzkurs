@@ -13,10 +13,10 @@ interface AuthProps {
 type AuthStep = 'AUTH_FORM' | 'IDENTITY' | 'SCANNING' | 'CUSTOMIZATION' | 'FINALIZING';
 
 const ARMOR_STYLES = [
-  { id: 'Classic Bronze', label: 'Legionnaire', icon: '🏺', desc: 'Standard issue.' }, 
-  { id: 'Midnight Stealth', label: 'Shadow Ops', icon: '🌑', desc: 'For covert missions.' }, 
-  { id: 'Golden God', label: 'Commander', icon: '👑', desc: 'Elite status only.' }, 
-  { id: 'Futuristic Chrome', label: 'Cyber', icon: '🦾', desc: 'Advanced tech.' }
+  { id: 'Classic Bronze', label: 'Легионер', icon: '🏺', desc: 'Стандартная пехотная броня.' }, 
+  { id: 'Midnight Stealth', label: 'Тень', icon: '🌑', desc: 'Легкая броня для разведки.' }, 
+  { id: 'Golden God', label: 'Командир', icon: '👑', desc: 'Элитная церемониальная броня.' }, 
+  { id: 'Futuristic Chrome', label: 'Кибер', icon: '🦾', desc: 'Экспериментальный экзоскелет.' }
 ];
 
 export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
@@ -62,8 +62,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
     const cleanUsername = username.trim().replace('@', '');
     const cleanPassword = password.trim();
 
-    if (!cleanUsername) { handleError('username', 'Username required'); return; }
-    if (!cleanPassword) { handleError('password', 'Password required'); return; }
+    if (!cleanUsername) { handleError('username', 'Требуется идентификатор'); return; }
+    if (!cleanPassword) { handleError('password', 'Требуется код доступа'); return; }
 
     // 1. ADMIN CHECK (Hardcoded)
     if (cleanUsername === 'admin' && cleanPassword === '55555sa5') {
@@ -73,7 +73,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
             name: 'Commander',
             telegramUsername: 'admin',
             isRegistration: false,
-            // Mock data for admin to skip generation
             avatarUrl: 'https://ui-avatars.com/api/?name=Admin&background=1F2128&color=fff',
             armorStyle: 'Golden God' 
         });
@@ -84,11 +83,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
         // REGISTRATION FLOW
         const userExists = existingUsers.some(u => u.telegramUsername?.toLowerCase() === cleanUsername.toLowerCase());
         if (userExists) {
-            handleError('username', 'Username already taken');
+            handleError('username', 'Боец уже в системе');
             return;
         }
         if (cleanPassword.length < 4) {
-             handleError('password', 'Password too short');
+             handleError('password', 'Слабый код (минимум 4 знака)');
              return;
         }
 
@@ -99,43 +98,38 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
         const user = existingUsers.find(u => u.telegramUsername?.toLowerCase() === cleanUsername.toLowerCase());
         
         if (!user) {
-            handleError('username', 'User not found. Register?');
+            handleError('username', 'Боец не найден. Вступить в ряды?');
             return;
         }
         
-        // Simple string comparison for prototype (In real app, hash this!)
         if (user.password !== cleanPassword) {
-            handleError('password', 'Invalid Password');
+            handleError('password', 'Неверный код доступа');
             return;
         }
 
         telegram.haptic('success');
-        // Log in immediately with stored data
-        onLogin({
-            ...user,
-            isRegistration: false
-        });
+        onLogin({ ...user, isRegistration: false });
     }
   };
 
   const handleIdentitySubmit = () => {
-    if (!realName.trim()) { handleError('name', 'Name Required'); return; }
-    if (!selectedImage) { handleError('photo', 'Photo Required'); return; }
+    if (!realName.trim()) { handleError('name', 'Позывной обязателен'); return; }
+    if (!selectedImage) { handleError('photo', 'Требуется биометрия'); return; }
     
     setStep('SCANNING');
     telegram.haptic('success');
-    setLoadingText('ANALYZING BIOMETRICS...');
+    setLoadingText('СКАНИРОВАНИЕ БИОМЕТРИИ...');
     // Mock Scan Duration
     setTimeout(() => {
         telegram.haptic('medium');
         setStep('CUSTOMIZATION');
-    }, 2500);
+    }, 3000);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { handleError('photo', 'File too large (Max 5MB)'); return; }
+      if (file.size > 5 * 1024 * 1024) { handleError('photo', 'Файл слишком большой (Макс 5MB)'); return; }
       const reader = new FileReader();
       reader.onloadend = () => { 
           setSelectedImage(reader.result as string); 
@@ -149,7 +143,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   const handleFinalize = async () => {
     setStep('FINALIZING');
     telegram.haptic('heavy');
-    const loadingMessages = ['FORGING ARMOR...', 'SYNCING NEURAL LINK...', 'ESTABLISHING COMMS...'];
+    const loadingMessages = ['КОВКА БРОНИ...', 'СИНХРОНИЗАЦИЯ НЕЙРОСЕТИ...', 'УСТАНОВКА СВЯЗИ СО ШТАБОМ...'];
     
     let msgIdx = 0;
     const interval = setInterval(() => {
@@ -169,7 +163,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
             role: 'STUDENT', 
             name: realName, 
             telegramUsername: username.trim().replace('@', ''),
-            password: password.trim(), // Storing password locally
+            password: password.trim(),
             originalPhoto: base64Data, 
             avatarUrl, 
             armorStyle,
@@ -177,7 +171,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
         });
     } catch (e) { 
         clearInterval(interval);
-        handleError('global', 'Connection failed. Try again.'); 
+        handleError('global', 'Ошибка связи. Повторите попытку.'); 
         setStep('CUSTOMIZATION'); 
     }
   };
@@ -185,164 +179,273 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   // --- RENDERERS ---
 
   const renderAuthForm = () => (
-    <div className={`space-y-6 w-full max-w-xs mx-auto animate-fade-in ${isShake ? 'animate-shake' : ''}`}>
-       <div className="text-center mb-8">
-           <div className="w-20 h-20 bg-[#6C5DD3] rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-[0_0_20px_rgba(108,93,211,0.5)] mb-4">
-             🛡️
+    <div className={`space-y-8 w-full animate-fade-in ${isShake ? 'animate-shake' : ''}`}>
+       {/* Brand Header */}
+       <div className="text-center relative">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#6C5DD3] rounded-full blur-[60px] opacity-30 pointer-events-none"></div>
+           <div className="w-20 h-20 bg-[#1F2128] border border-white/10 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-xl mb-4 relative z-10">
+             <span className="animate-pulse">🛡️</span>
            </div>
-           <h1 className="text-3xl font-black text-white tracking-tight">SALES<span className="text-[#6C5DD3]">PRO</span></h1>
-           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.3em]">{isRegisterMode ? 'ENLISTMENT' : 'ACCESS TERMINAL'}</p>
+           <h1 className="text-3xl font-black text-white tracking-tighter">SALES<span className="text-[#6C5DD3]">PRO</span></h1>
+           <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.4em]">Spartan Edition</p>
        </div>
 
-       <div className="space-y-4">
-           {/* Username Input */}
-           <div className="group">
-              <label className="text-[10px] font-bold text-[#6C5DD3] uppercase ml-1 mb-1 block">Telegram Nickname</label>
-              <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">@</span>
-                  <input 
-                    value={username} 
-                    onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} 
-                    className={`w-full bg-[#131419] border ${errors.username ? 'border-red-500' : 'border-white/10'} rounded-xl py-4 pl-9 pr-4 text-white font-bold outline-none focus:border-[#6C5DD3] transition-colors`}
-                    placeholder="username"
-                  />
-              </div>
-              {errors.username && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.username}</p>}
-          </div>
-
-          {/* Password Input */}
-          <div className="group">
-              <label className="text-[10px] font-bold text-[#6C5DD3] uppercase ml-1 mb-1 block">Password</label>
-              <input 
-                type="password"
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-                className={`w-full bg-[#131419] border ${errors.password ? 'border-red-500' : 'border-white/10'} rounded-xl py-4 px-4 text-white font-bold outline-none focus:border-[#6C5DD3] transition-colors`}
-                placeholder="••••••••"
-              />
-              {errors.password && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.password}</p>}
-          </div>
-       </div>
-
-       <div className="pt-4 space-y-3">
-          <Button fullWidth onClick={handleAuthSubmit} icon={isRegisterMode ? "📝" : "⚡"}>
-              {isRegisterMode ? 'CREATE PROFILE' : 'LOGIN'}
-          </Button>
-          
+       {/* Mode Toggle */}
+       <div className="bg-[#131419] p-1 rounded-xl flex border border-white/5 relative">
+          <div 
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#6C5DD3] rounded-lg transition-all duration-300 shadow-lg shadow-[#6C5DD3]/20 ${isRegisterMode ? 'left-[calc(50%+2px)]' : 'left-1'}`}
+          ></div>
           <button 
-            onClick={() => { setIsRegisterMode(!isRegisterMode); setErrors({}); }}
-            className="w-full text-center text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+             onClick={() => { setIsRegisterMode(false); setErrors({}); }} 
+             className={`flex-1 py-3 text-xs font-black uppercase tracking-widest relative z-10 transition-colors ${!isRegisterMode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
           >
-              {isRegisterMode ? 'Already have an account? Login' : 'New recruit? Register'}
+             Вход
+          </button>
+          <button 
+             onClick={() => { setIsRegisterMode(true); setErrors({}); }} 
+             className={`flex-1 py-3 text-xs font-black uppercase tracking-widest relative z-10 transition-colors ${isRegisterMode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+             Вступить
           </button>
        </div>
+
+       {/* Form Fields */}
+       <div className="space-y-4">
+           <div className="relative group">
+               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className={`h-5 w-5 transition-colors ${errors.username ? 'text-red-500' : 'text-slate-500 group-focus-within:text-[#6C5DD3]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+               </div>
+               <input 
+                 value={username} 
+                 onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_@]/g, ''))} 
+                 className={`w-full bg-[#131419] border ${errors.username ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3] focus:ring-1 focus:ring-[#6C5DD3] transition-all`}
+                 placeholder="Telegram Username"
+               />
+           </div>
+
+           <div className="relative group">
+               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className={`h-5 w-5 transition-colors ${errors.password ? 'text-red-500' : 'text-slate-500 group-focus-within:text-[#6C5DD3]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+               </div>
+               <input 
+                 type="password"
+                 value={password} 
+                 onChange={e => setPassword(e.target.value)} 
+                 className={`w-full bg-[#131419] border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3] focus:ring-1 focus:ring-[#6C5DD3] transition-all`}
+                 placeholder="Код доступа"
+               />
+           </div>
+           
+           {(errors.username || errors.password) && (
+               <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center gap-2">
+                   <span className="text-red-500">⚠️</span>
+                   <p className="text-red-400 text-xs font-bold">{errors.username || errors.password}</p>
+               </div>
+           )}
+       </div>
+
+       <Button 
+            fullWidth 
+            onClick={handleAuthSubmit} 
+            className="!rounded-2xl !py-4 shadow-lg shadow-[#6C5DD3]/20 border border-[#6C5DD3]/50 relative overflow-hidden group"
+       >
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {isRegisterMode ? 'ИНИЦИАЛИЗАЦИЯ' : 'ДОСТУП К ТЕРМИНАЛУ'} 
+            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          </span>
+       </Button>
     </div>
   );
 
   const renderIdentity = () => (
-      <div className={`space-y-6 w-full animate-slide-in ${isShake ? 'animate-shake' : ''}`}>
-           <div className="text-center mb-8">
-              <h2 className="text-2xl font-black text-white">BIOMETRICS</h2>
-              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Setup User Profile</p>
+      <div className={`space-y-8 w-full animate-slide-in ${isShake ? 'animate-shake' : ''}`}>
+           <div className="text-center">
+              <h2 className="text-2xl font-black text-white tracking-tight">ИДЕНТИФИКАЦИЯ</h2>
+              <p className="text-slate-500 text-xs uppercase tracking-widest mt-2">Установка нейросвязи</p>
           </div>
 
-          <div className="group">
-              <label className="text-[10px] font-bold text-[#6C5DD3] uppercase ml-1 mb-1 block">Callsign (Real Name)</label>
-              <input 
-                value={realName} 
-                onChange={e => setRealName(e.target.value)} 
-                className={`w-full bg-[#131419] border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-xl py-4 px-4 text-white font-bold outline-none focus:border-[#6C5DD3] transition-colors text-center`}
-                placeholder="Ex. Alex Mercer"
-              />
-          </div>
+          <div className="space-y-4">
+              <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1.5 block">Позывной (Отображаемое имя)</label>
+                  <input 
+                    value={realName} 
+                    onChange={e => setRealName(e.target.value)} 
+                    className={`w-full bg-[#131419] border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 px-6 text-white text-lg font-bold text-center outline-none focus:border-[#6C5DD3] transition-colors`}
+                    placeholder="Например: Maverick"
+                  />
+              </div>
 
-          <div 
-            onClick={() => fileInputRef.current?.click()} 
-            className={`w-40 h-40 mx-auto rounded-full bg-[#131419] border-2 border-dashed ${errors.photo ? 'border-red-500' : 'border-white/20'} hover:border-[#6C5DD3] flex items-center justify-center cursor-pointer relative overflow-hidden transition-all group`}
-          >
-              {selectedImage ? (
-                  <img src={selectedImage} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-              ) : (
-                  <div className="text-center">
-                      <span className="text-3xl block mb-2 opacity-50">📸</span>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase">Tap to Upload</span>
-                  </div>
-              )}
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+              <div 
+                onClick={() => fileInputRef.current?.click()} 
+                className={`
+                    w-48 h-48 mx-auto rounded-full bg-[#131419] relative cursor-pointer overflow-hidden group transition-all duration-300
+                    border-2 border-dashed ${errors.photo ? 'border-red-500' : 'border-white/20 hover:border-[#6C5DD3]'}
+                `}
+              >
+                  {selectedImage ? (
+                      <>
+                        <img src={selectedImage} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-white font-bold text-xs uppercase">Изменить</span>
+                        </div>
+                      </>
+                  ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                             <span className="text-2xl">📸</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Загрузить фото</span>
+                      </div>
+                  )}
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                  
+                  {/* Decorative scanner rings */}
+                  <div className="absolute inset-0 border border-white/5 rounded-full scale-75"></div>
+                  <div className="absolute inset-0 border border-white/5 rounded-full scale-50"></div>
+              </div>
           </div>
-          {errors.photo && <p className="text-red-500 text-[10px] font-bold text-center">{errors.photo}</p>}
-
-          <Button fullWidth onClick={handleIdentitySubmit} className="mt-8">SCAN & VERIFY</Button>
-          <button onClick={() => setStep('AUTH_FORM')} className="w-full text-center text-xs font-bold text-slate-500 mt-4">Back</button>
+          
+          <div className="flex gap-3 pt-4">
+              <button onClick={() => setStep('AUTH_FORM')} className="px-6 py-4 rounded-2xl bg-white/5 text-slate-400 font-bold text-xs uppercase hover:bg-white/10 transition-colors">Назад</button>
+              <Button fullWidth onClick={handleIdentitySubmit} className="!rounded-2xl">ПОДТВЕРДИТЬ ЛИЧНОСТЬ</Button>
+          </div>
       </div>
   );
 
   const renderScanning = () => (
-      <div className="text-center animate-fade-in w-full">
-           <div className="relative w-48 h-48 mx-auto mb-8">
-                {selectedImage && <img src={selectedImage} className="w-full h-full rounded-full object-cover opacity-50 grayscale" />}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#6C5DD3]/0 via-[#6C5DD3]/50 to-[#6C5DD3]/0 h-[20%] w-full animate-scanline border-b-2 border-[#6C5DD3] shadow-[0_0_20px_#6C5DD3]"></div>
-                <div className="absolute inset-0 border-4 border-[#6C5DD3]/20 rounded-full border-t-[#6C5DD3] animate-spin"></div>
+      <div className="text-center animate-fade-in w-full py-10">
+           <div className="relative w-56 h-56 mx-auto mb-10">
+                {/* Image Background */}
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1F2128] relative z-10">
+                     {selectedImage && <img src={selectedImage} className="w-full h-full object-cover filter grayscale contrast-125" />}
+                </div>
+                
+                {/* Face ID Scanner Overlay */}
+                <div className="absolute inset-0 rounded-full z-20 overflow-hidden">
+                    <div className="absolute inset-0 bg-[#6C5DD3]/20"></div>
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-[#6C5DD3] shadow-[0_0_20px_#6C5DD3] animate-scan-vertical"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-[#6C5DD3]/50 rounded-lg opacity-50 animate-ping-slow"></div>
+                </div>
+
+                {/* Outer Rotating Rings */}
+                <div className="absolute -inset-4 border border-dashed border-[#6C5DD3]/30 rounded-full animate-spin-slow"></div>
+                <div className="absolute -inset-8 border border-white/5 rounded-full"></div>
            </div>
-           <h3 className="text-xl font-black text-white animate-pulse">{loadingText}</h3>
-           <p className="text-[#6C5DD3] font-mono text-xs mt-2">ID: {Date.now().toString().slice(-8)}</p>
-           <style>{`@keyframes scanline { 0% { top: 0; } 100% { top: 100%; } } .animate-scanline { animation: scanline 1.5s linear infinite; }`}</style>
+
+           <h3 className="text-xl font-black text-white mb-2">{loadingText}</h3>
+           <p className="text-[#6C5DD3] font-mono text-xs tracking-widest animate-pulse">
+               ID: {Date.now().toString().slice(-8)} • СОВПАДЕНИЕ: 99.9%
+           </p>
+           
+           <style>{`
+             @keyframes scan-vertical { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } } 
+             .animate-scan-vertical { animation: scan-vertical 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+             .animate-spin-slow { animation: spin 10s linear infinite; }
+             .animate-ping-slow { animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
+           `}</style>
       </div>
   );
 
   const renderCustomization = () => (
       <div className="space-y-6 w-full animate-slide-in">
            <div className="text-center mb-6">
-              <h2 className="text-xl font-black text-white">SELECT GEAR</h2>
-              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Choose your combat skin</p>
+              <h2 className="text-xl font-black text-white">ВЫБОР ЭКИПИРОВКИ</h2>
+              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Выберите стиль боевого аватара</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-              {ARMOR_STYLES.map(style => (
-                  <button 
-                    key={style.id} 
-                    onClick={() => { setArmorStyle(style.id); telegram.haptic('selection'); }} 
-                    className={`p-4 rounded-2xl border transition-all text-left relative overflow-hidden group
-                        ${armorStyle === style.id ? 'bg-[#6C5DD3] border-[#6C5DD3] text-white shadow-lg shadow-[#6C5DD3]/30' : 'bg-[#131419] border-white/10 text-slate-400 hover:border-white/30'}
-                    `}
-                  >
-                      <div className="text-2xl mb-2">{style.icon}</div>
-                      <div className="font-bold text-xs uppercase mb-1">{style.label}</div>
-                      <div className={`text-[9px] font-medium leading-tight ${armorStyle === style.id ? 'text-white/70' : 'text-slate-600'}`}>{style.desc}</div>
-                      {armorStyle === style.id && <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full shadow-[0_0_5px_white]"></div>}
-                  </button>
-              ))}
+              {ARMOR_STYLES.map(style => {
+                  const isSelected = armorStyle === style.id;
+                  return (
+                    <button 
+                        key={style.id} 
+                        onClick={() => { setArmorStyle(style.id); telegram.haptic('selection'); }} 
+                        className={`
+                            relative p-4 rounded-2xl border text-left transition-all duration-300 overflow-hidden group
+                            ${isSelected 
+                                ? 'bg-[#6C5DD3] border-[#6C5DD3] shadow-lg shadow-[#6C5DD3]/30 transform scale-105 z-10' 
+                                : 'bg-[#131419] border-white/5 hover:border-white/20 hover:bg-[#1A1C24]'}
+                        `}
+                    >
+                        <div className="flex justify-between items-start mb-3">
+                            <span className="text-2xl">{style.icon}</span>
+                            {isSelected && <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_8px_white] animate-pulse"></div>}
+                        </div>
+                        <div className={`font-black text-xs uppercase mb-1 ${isSelected ? 'text-white' : 'text-slate-300'}`}>{style.label}</div>
+                        <div className={`text-[9px] font-medium leading-tight ${isSelected ? 'text-white/80' : 'text-slate-600'}`}>{style.desc}</div>
+                        
+                        {/* Background sheen effect */}
+                        {isSelected && <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>}
+                    </button>
+                  );
+              })}
           </div>
 
-          <Button fullWidth onClick={handleFinalize} className="mt-6" icon="⚡">INITIATE GENERATION</Button>
+          <div className="pt-4">
+            <Button fullWidth onClick={handleFinalize} className="!rounded-2xl !py-4 shadow-xl shadow-[#6C5DD3]/20" icon="⚡">
+                НАЧАТЬ ГЕНЕРАЦИЮ
+            </Button>
+          </div>
       </div>
   );
 
   const renderFinalizing = () => (
-    <div className="text-center w-full animate-fade-in py-10">
-        <div className="w-24 h-24 mx-auto mb-8 relative">
+    <div className="text-center w-full animate-fade-in py-16">
+        <div className="w-32 h-32 mx-auto mb-10 relative">
+            <div className="absolute inset-0 bg-[#6C5DD3] rounded-full blur-[40px] opacity-20 animate-pulse"></div>
+            
+            {/* Spinning Rings */}
             <div className="absolute inset-0 border-4 border-[#1F2128] rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-t-[#6C5DD3] rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">⚙️</div>
+            <div className="absolute inset-0 border-4 border-t-[#6C5DD3] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-2 border-2 border-t-white/50 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin-reverse opacity-50"></div>
+            
+            <div className="absolute inset-0 flex items-center justify-center text-3xl animate-bounce">⚙️</div>
         </div>
-        <h3 className="text-lg font-bold text-white mb-2">{loadingText}</h3>
-        <p className="text-slate-500 text-xs">Utilizing Neural AI Cluster. Please wait.</p>
+        <h3 className="text-xl font-bold text-white mb-3 tracking-tight">{loadingText}</h3>
+        <div className="w-48 h-1 bg-[#1F2128] mx-auto rounded-full overflow-hidden">
+            <div className="h-full bg-[#6C5DD3] w-1/2 animate-progress"></div>
+        </div>
+        <p className="text-slate-500 text-[10px] mt-4 uppercase tracking-widest">Нейросеть активна</p>
+        <style>{`
+            .animate-spin-reverse { animation: spin 2s linear infinite reverse; }
+            @keyframes progress { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
+            .animate-progress { animation: progress 3s ease-in-out infinite; }
+        `}</style>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[#0F1115] relative overflow-hidden">
-         {/* Background Elements */}
-         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,_rgba(108,93,211,0.15),_transparent_70%)] pointer-events-none"></div>
-         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#FFAB7B]/5 rounded-full blur-[100px] pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#0F1115] relative overflow-hidden font-sans">
+         {/* Cinematic Background Elements */}
+         <div className="fixed inset-0 bg-[linear-gradient(to_bottom,#0F1115_0%,#131419_100%)] z-0"></div>
+         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(108,93,211,0.15),_transparent_70%)] pointer-events-none z-0"></div>
          
-         <div className="w-full max-w-sm relative z-10">
-             {/* Steps */}
-             {step === 'AUTH_FORM' && renderAuthForm()}
-             {step === 'IDENTITY' && renderIdentity()}
-             {step === 'SCANNING' && renderScanning()}
-             {step === 'CUSTOMIZATION' && renderCustomization()}
-             {step === 'FINALIZING' && renderFinalizing()}
+         {/* Grid Floor */}
+         <div className="fixed bottom-0 left-0 w-full h-[30vh] bg-[linear-gradient(to_top,#0F1115_0%,transparent_100%)] z-10"></div>
+         <div className="fixed inset-0 opacity-[0.03] z-0" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+
+         {/* Main Card */}
+         <div className="w-full max-w-sm relative z-20">
+             <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+                 {/* Top sheen */}
+                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                 
+                 {/* Step Content */}
+                 {step === 'AUTH_FORM' && renderAuthForm()}
+                 {step === 'IDENTITY' && renderIdentity()}
+                 {step === 'SCANNING' && renderScanning()}
+                 {step === 'CUSTOMIZATION' && renderCustomization()}
+                 {step === 'FINALIZING' && renderFinalizing()}
+             </div>
+             
+             {/* Footer copyright */}
+             <div className="text-center mt-6 opacity-30">
+                 <p className="text-[9px] text-white uppercase tracking-[0.3em]">Spartan Sales OS v4.0</p>
+             </div>
          </div>
     </div>
   );

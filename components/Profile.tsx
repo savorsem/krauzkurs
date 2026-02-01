@@ -22,7 +22,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
 
   // Settings State
   const [editName, setEditName] = useState(userProgress.name);
-  const [editInsta, setEditInsta] = useState(userProgress.instagramUsername || '');
+  const [editTelegram, setEditTelegram] = useState(userProgress.telegramUsername || '');
   const [editNotifications, setEditNotifications] = useState(userProgress.notifications);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -49,7 +49,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
     setTimeout(() => {
         onUpdateUser({
             name: editName,
-            instagramUsername: editInsta,
+            telegramUsername: editTelegram,
             notifications: editNotifications
         });
         setIsSaving(false);
@@ -63,9 +63,9 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   // --- SUB-COMPONENTS ---
 
   const renderStats = () => (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6">
           {/* Main Stats Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 animate-slide-up fill-mode-both">
               <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between h-32">
                   <div className="w-8 h-8 bg-[#FFAB7B]/20 text-[#FFAB7B] rounded-full flex items-center justify-center text-lg">⚡</div>
                   <div>
@@ -83,7 +83,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
           </div>
 
           {/* Activity Graph Card */}
-          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 relative overflow-hidden animate-slide-up delay-100 fill-mode-both">
              <div className="flex justify-between items-center mb-6">
                  <h3 className="font-black text-[#1F2128]">Активность</h3>
                  <span className="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-lg font-bold uppercase">+12% week</span>
@@ -106,7 +106,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
           </div>
 
           {/* Achievement Badges */}
-          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 animate-slide-up delay-200 fill-mode-both">
               <h3 className="font-black text-[#1F2128] mb-4">Награды</h3>
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
                   {[
@@ -141,8 +141,8 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
       const sortedUsers = combinedUsers.sort((a, b) => b.xp - a.xp);
 
       return (
-          <div className="space-y-4 animate-slide-in">
-              <div className="bg-[#1F2128] text-white p-6 rounded-[2rem] mb-6 relative overflow-hidden">
+          <div className="space-y-4">
+              <div className="bg-[#1F2128] text-white p-6 rounded-[2rem] mb-6 relative overflow-hidden animate-slide-up fill-mode-both">
                   <div className="absolute top-0 right-0 text-[100px] opacity-10 rotate-12 -translate-y-4">🏆</div>
                   <h3 className="text-2xl font-black mb-1">Топ Бойцов</h3>
                   <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-6">Рейтинг отряда</p>
@@ -181,7 +181,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
                   </div>
               </div>
 
-              <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden">
+              <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden animate-slide-up delay-100 fill-mode-both">
                   {sortedUsers.slice(3).map((u, i) => (
                       <div key={i} className={`p-4 flex items-center justify-between border-b border-slate-50 last:border-0 ${u.name === userProgress.name ? 'bg-orange-50' : ''}`}>
                           <div className="flex items-center gap-4">
@@ -206,9 +206,9 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   };
 
   const renderSettings = () => (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6">
           {/* Personal Info */}
-          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 animate-slide-up fill-mode-both">
               <h3 className="font-black text-[#1F2128] mb-6 text-lg">Личное дело</h3>
               
               <div className="space-y-4">
@@ -221,10 +221,10 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
                       />
                   </div>
                   <div>
-                      <label className="text-[10px] font-black uppercase text-slate-400 pl-2 mb-1 block">Связь (Instagram)</label>
+                      <label className="text-[10px] font-black uppercase text-slate-400 pl-2 mb-1 block">Связь (Telegram)</label>
                       <input 
-                          value={editInsta}
-                          onChange={(e) => setEditInsta(e.target.value)}
+                          value={editTelegram}
+                          onChange={(e) => setEditTelegram(e.target.value)}
                           placeholder="@username"
                           className="w-full bg-[#F9FAFB] p-4 rounded-2xl font-bold text-[#1F2128] outline-none border border-transparent focus:border-[#FFAB7B] transition-all"
                       />
@@ -233,7 +233,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
           </div>
 
           {/* Notifications */}
-          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 animate-slide-up delay-100 fill-mode-both">
               <h3 className="font-black text-[#1F2128] mb-6 text-lg">Уведомления</h3>
               
               <div className="space-y-4">
@@ -265,7 +265,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
           </div>
 
           {/* Customization */}
-          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 animate-slide-up delay-200 fill-mode-both">
               <h3 className="font-black text-[#1F2128] mb-6 text-lg">Кастомизация</h3>
               <p className="text-xs text-slate-500 mb-4">Смена брони доступна с 5 уровня.</p>
               
@@ -284,7 +284,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
           <button 
             onClick={handleSaveSettings}
             disabled={isSaving}
-            className="w-full py-4 bg-[#1F2128] text-white rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 bg-[#1F2128] text-white rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 animate-slide-up delay-300 fill-mode-both"
           >
               {isSaving ? (
                   <>
@@ -335,8 +335,11 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
                   {/* Holographic Ring Base */}
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-[#FFAB7B]/20 rounded-full blur-xl transform scale-y-50 animate-pulse"></div>
                   
+                  {/* Energy Aura/Glow behind */}
+                  <div className="absolute inset-0 rounded-[2.5rem] bg-[#6C5DD3]/30 blur-2xl animate-pulse-slow"></div>
+
                   {/* The Avatar Image */}
-                  <div className="w-full h-full rounded-[2.5rem] border-4 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative bg-[#0F1115] group">
+                  <div className="w-full h-full rounded-[2.5rem] border-4 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative bg-[#0F1115] group animate-avatar-breathe">
                       <img 
                         src={userProgress.avatarUrl || `https://ui-avatars.com/api/?name=${userProgress.name}`} 
                         className="w-full h-full object-cover transform scale-110 group-hover:scale-100 transition-transform duration-700"
@@ -396,6 +399,13 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
             100% { transform: translateY(0%); }
         }
         .animate-scanline { animation: scanline 3s linear infinite; }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.1); }
+            50% { transform: scale(1.02); box-shadow: 0 25px 60px rgba(108, 93, 211, 0.3); border-color: rgba(108, 93, 211, 0.4); }
+        }
+        .animate-avatar-breathe {
+            animation: breathe 4s ease-in-out infinite;
+        }
       `}</style>
     </div>
   );

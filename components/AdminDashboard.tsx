@@ -30,6 +30,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [editingModule, setEditingModule] = useState<Partial<Module> | null>(null);
   const [editingLesson, setEditingLesson] = useState<Partial<Lesson> | null>(null);
   const [editingEvent, setEditingEvent] = useState<Partial<CalendarEvent> | null>(null);
+  const [editingUser, setEditingUser] = useState<UserProgress | null>(null);
   const [selectedParentModuleId, setSelectedParentModuleId] = useState<string | null>(null);
 
   // --- ACTIONS ---
@@ -124,13 +125,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // 3. User Actions
-  const toggleUserRole = (user: UserProgress) => {
-      const roles: UserRole[] = ['STUDENT', 'CURATOR', 'ADMIN'];
-      const nextIndex = (roles.indexOf(user.role) + 1) % roles.length;
-      const nextRole = roles[nextIndex];
-      const updatedUsers = users.map(u => u.name === user.name ? { ...u, role: nextRole } : u);
-      onUpdateUsers(updatedUsers);
-      addToast('info', `User role updated to ${nextRole}`);
+  const saveUser = () => {
+    if (!editingUser) return;
+    const updatedUsers = users.map(u => u.name === editingUser.name ? editingUser : u);
+    onUpdateUsers(updatedUsers);
+    setEditingUser(null);
+    addToast('success', 'User Profile Updated');
   };
 
   const resetUserProgress = (user: UserProgress) => {
@@ -278,8 +278,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                         
                         <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
-                            <button onClick={() => toggleUserRole(u)} className="flex-1 py-2 text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 transition-colors">
-                                Change Role
+                            <button onClick={() => setEditingUser(u)} className="flex-1 py-2 text-[10px] font-bold uppercase bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 transition-colors">
+                                Edit / Assign Role
                             </button>
                             <button onClick={() => resetUserProgress(u)} className="px-3 py-2 text-[10px] font-bold uppercase bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors">
                                 Reset
@@ -288,6 +288,76 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                 ))}
             </div>
+
+            {/* User Editor Modal */}
+            {editingUser && (
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
+                     <div className="bg-[#1F2128] p-6 rounded-[2rem] w-full max-w-md space-y-6 border border-white/10 shadow-2xl">
+                         <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                            <h3 className="text-white font-black text-xl">Manage Operative</h3>
+                            <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-white text-xs font-bold uppercase">Close</button>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                             <img src={editingUser.avatarUrl || `https://ui-avatars.com/api/?name=${editingUser.name}`} className="w-16 h-16 rounded-full border-2 border-white/10" />
+                             <div>
+                                 <h4 className="text-white font-bold text-lg">{editingUser.name}</h4>
+                                 <p className="text-slate-500 text-xs">@{editingUser.telegramUsername || 'unknown'}</p>
+                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase">Clearance Level (Role)</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['STUDENT', 'CURATOR', 'ADMIN'] as UserRole[]).map(role => (
+                                    <button
+                                        key={role}
+                                        onClick={() => setEditingUser({...editingUser, role})}
+                                        className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border ${
+                                            editingUser.role === role 
+                                            ? 'bg-[#6C5DD3] text-white border-[#6C5DD3] shadow-lg shadow-[#6C5DD3]/20' 
+                                            : 'bg-transparent text-slate-400 border-slate-700 hover:border-slate-500 hover:text-white'
+                                        }`}
+                                    >
+                                        {role}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Active Permissions:</p>
+                            <ul className="space-y-1">
+                                {editingUser.role === 'STUDENT' && ['Access Learning Modules', 'Submit Homework', 'View Leaderboard'].map(p => (
+                                    <li key={p} className="text-white text-xs flex items-center gap-2"><span className="text-[#6C5DD3]">✓</span> {p}</li>
+                                ))}
+                                {editingUser.role === 'CURATOR' && ['Access Learning Modules', 'Check Homework', 'View Curator Dashboard'].map(p => (
+                                    <li key={p} className="text-white text-xs flex items-center gap-2"><span className="text-[#6C5DD3]">✓</span> {p}</li>
+                                ))}
+                                {editingUser.role === 'ADMIN' && ['Full System Access', 'Edit Content & Config', 'Manage Users'].map(p => (
+                                    <li key={p} className="text-white text-xs flex items-center gap-2"><span className="text-[#6C5DD3]">✓</span> {p}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            <button 
+                                onClick={() => {
+                                    if(confirm('Reset all progress for this user?')) {
+                                        setEditingUser({...editingUser, xp: 0, level: 1, completedLessonIds: []});
+                                    }
+                                }} 
+                                className="flex-1 py-3 text-red-500 font-bold bg-red-500/10 rounded-xl hover:bg-red-500/20 text-xs uppercase"
+                            >
+                                Reset Progress
+                            </button>
+                            <button onClick={saveUser} className="flex-1 py-3 text-white font-bold bg-[#6C5DD3] rounded-xl shadow-lg shadow-[#6C5DD3]/20 text-xs uppercase hover:scale-[1.02] transition-transform">
+                                Save Changes
+                            </button>
+                        </div>
+                     </div>
+                </div>
+            )}
         </div>
       );
   };
@@ -442,6 +512,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <label className="text-slate-500 text-[10px] font-black uppercase mb-1 block">Application Name</label>
                   <input value={config.appName} onChange={e => onUpdateConfig({...config, appName: e.target.value})} className="w-full bg-black/20 text-white p-3 rounded-xl border border-white/10 focus:border-[#6C5DD3] outline-none font-bold" />
               </div>
+
+               <div className="space-y-1">
+                  <label className="text-slate-500 text-[10px] font-black uppercase mb-1 block">Primary Accent Color</label>
+                  <div className="flex items-center gap-2">
+                      <input 
+                          type="color" 
+                          value={config.primaryColor} 
+                          onChange={e => onUpdateConfig({...config, primaryColor: e.target.value})} 
+                          className="w-10 h-10 rounded-lg border-none bg-transparent cursor-pointer"
+                      />
+                      <span className="text-white text-xs font-mono">{config.primaryColor}</span>
+                  </div>
+              </div>
+
               <div className="space-y-1">
                   <label className="text-slate-500 text-[10px] font-black uppercase mb-1 block">System Prompt (AI Commander)</label>
                   <textarea rows={5} value={config.systemInstruction} onChange={e => onUpdateConfig({...config, systemInstruction: e.target.value})} className="w-full bg-black/20 text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-mono leading-relaxed" />
@@ -505,6 +589,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         placeholder="Google Drive Folder ID" 
                         value={config.integrations?.googleDriveFolderId || ''} 
                         onChange={e => onUpdateConfig({...config, integrations: {...config.integrations, googleDriveFolderId: e.target.value}})}
+                        className="w-full bg-transparent text-white text-xs outline-none placeholder:text-slate-700 font-mono" 
+                      />
+                  </div>
+
+                  <div className="p-3 bg-black/20 rounded-xl border border-white/5 flex items-center gap-3">
+                      <span className="text-xl">🤖</span>
+                      <select 
+                          value={config.integrations?.aiModelVersion || 'gemini-1.5-pro'}
+                          onChange={e => onUpdateConfig({...config, integrations: {...config.integrations, aiModelVersion: e.target.value}})}
+                          className="w-full bg-transparent text-white text-xs outline-none font-mono"
+                      >
+                          <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                      </select>
+                  </div>
+
+                  <div className="p-3 bg-black/20 rounded-xl border border-white/5 flex items-center gap-3">
+                      <span className="text-xl">🔗</span>
+                      <input 
+                        placeholder="CRM Webhook URL" 
+                        value={config.integrations?.crmWebhookUrl || ''} 
+                        onChange={e => onUpdateConfig({...config, integrations: {...config.integrations, crmWebhookUrl: e.target.value}})}
                         className="w-full bg-transparent text-white text-xs outline-none placeholder:text-slate-700 font-mono" 
                       />
                   </div>

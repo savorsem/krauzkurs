@@ -21,6 +21,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   
@@ -29,6 +30,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate PDF for FILE type
+      if (lesson.homeworkType === 'FILE' && file.type !== 'application/pdf') {
+          alert('Только файлы PDF доступны для загрузки.');
+          return;
+      }
+      
+      setFileName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedFile(reader.result as string);
@@ -151,17 +159,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
                                 className="hidden" 
                             />
                             {selectedFile ? (
-                                <div className="flex flex-col items-center">
+                                <div className="flex flex-col items-center justify-center p-4">
                                     <span className="text-[#00B050] text-2xl mb-2">✓</span>
-                                    <span className="text-[#00B050] font-bold text-xs">
-                                        {lesson.homeworkType === 'FILE' ? 'PDF загружен' : 'Материал загружен'}
+                                    <span className="text-[#00B050] font-bold text-xs text-center break-all">
+                                        {lesson.homeworkType === 'FILE' && fileName ? fileName : 'Материал загружен'}
                                     </span>
+                                    {lesson.homeworkType === 'FILE' && <span className="text-white/40 text-[9px] mt-1 uppercase tracking-widest">PDF Ready</span>}
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center">
                                     <span className="text-white/40 text-2xl mb-2">+</span>
                                     <span className="text-white/40 text-xs uppercase font-bold tracking-wide">
-                                        {lesson.homeworkType === 'FILE' ? 'Загрузить PDF' : 'Загрузить файл'}
+                                        {lesson.homeworkType === 'FILE' ? 'Загрузить PDF' : lesson.homeworkType === 'VIDEO' ? 'Загрузить видео' : 'Загрузить фото'}
                                     </span>
                                 </div>
                             )}
