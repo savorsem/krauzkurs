@@ -326,6 +326,7 @@ const App: React.FC = () => {
                     onUpdateModules={setModules} 
                     users={allUsers} 
                     onUpdateUsers={setAllUsers} 
+                    events={events}
                     onUpdateEvents={setEvents}
                     addToast={addToast}
                     activeTab={activeAdminTab}

@@ -93,8 +93,11 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                             }
                         }}
                         className={`
-                            relative w-full aspect-[4/3] rounded-[2.5rem] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-transform active:scale-95 cursor-pointer border
-                            ${isLocked ? 'border-white/5 opacity-50 grayscale' : 'border-white/10 hover:border-[#6C5DD3]/50'}
+                            relative w-full aspect-[4/3] rounded-[2.5rem] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 border
+                            ${isLocked 
+                                ? 'border-white/5 opacity-50 grayscale cursor-not-allowed' 
+                                : 'border-white/10 hover:border-[#6C5DD3]/50 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(108,93,211,0.2)] cursor-pointer active:scale-95'
+                            }
                             bg-[#1F2128]
                         `}
                         style={{ animationDelay: `${0.1 * idx}s` }}
@@ -102,15 +105,23 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                         {/* Background Texture/Gradient */}
                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                         
+                        {/* Locked Overlay */}
+                        {isLocked && (
+                            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                                <div className="bg-black/40 backdrop-blur-md p-4 rounded-3xl border border-white/10 shadow-xl">
+                                    <div className="text-4xl drop-shadow-md">🔒</div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-white mt-2 text-center">Lvl {module.minLevel}</div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Top Row */}
                         <div className="flex justify-between items-start relative z-10">
                             <div className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md flex items-center justify-center text-2xl text-white border border-white/10">
                                 {module.category === 'SALES' ? '💰' : module.category === 'PSYCHOLOGY' ? '🧠' : '🎓'}
                             </div>
                             
-                            {isLocked ? (
-                                <div className="w-8 h-8 flex items-center justify-center text-slate-600">🔒</div>
-                            ) : (
+                            {!isLocked && (
                                 <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 backdrop-blur-md flex items-center justify-center text-[#D4AF37] shadow-lg border border-[#D4AF37]/20">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-0.5">
                                         <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />

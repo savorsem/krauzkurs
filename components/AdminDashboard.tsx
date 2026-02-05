@@ -12,15 +12,15 @@ interface AdminDashboardProps {
   onUpdateModules: (newModules: Module[]) => void;
   users: UserProgress[];
   onUpdateUsers: (newUsers: UserProgress[]) => void;
+  events: CalendarEvent[];
   onUpdateEvents: (newEvents: CalendarEvent[]) => void;
   addToast: (type: 'success' | 'error' | 'info', message: string) => void;
   activeTab: AdminTab;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  config, onUpdateConfig, modules, onUpdateModules, users, onUpdateUsers, onUpdateEvents, addToast, activeTab
+  config, onUpdateConfig, modules, onUpdateModules, users, onUpdateUsers, events, onUpdateEvents, addToast, activeTab
 }) => {
-  const [events, setEvents] = useState<CalendarEvent[]>(() => Storage.get<CalendarEvent[]>('calendarEvents', []));
   const [userSearch, setUserSearch] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -138,10 +138,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
   };
 
+  // 4. Event Actions
+  const saveEvent = () => {
+      if (!editingEvent || !editingEvent.title) {
+          addToast('error', 'Название обязательно');
+          return;
+      }
+      let updatedEvents = [...events];
+      if (editingEvent.id) {
+          updatedEvents = updatedEvents.map(e => e.id === editingEvent.id ? { ...e, ...editingEvent } as CalendarEvent : e);
+      } else {
+          updatedEvents.push({
+              id: `evt_${Date.now()}`,
+              title: editingEvent.title,
+              description: editingEvent.description || '',
+              date: editingEvent.date || new Date().toISOString(),
+              type: editingEvent.type || EventType.WEBINAR,
+              durationMinutes: editingEvent.durationMinutes || 60
+          });
+      }
+      onUpdateEvents(updatedEvents);
+      setEditingEvent(null);
+      addToast('success', 'Событие сохранено');
+  };
+
+  const deleteEvent = (id: string) => {
+      if (confirm('Удалить событие?')) {
+          onUpdateEvents(events.filter(e => e.id !== id));
+          addToast('info', 'Событие удалено');
+      }
+  };
+
+
   // --- RENDERERS ---
 
   const renderHeader = () => (
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-[#1F2128] p-6 rounded-[2rem] border border-white/5">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 shadow-xl">
           <div>
               <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-2">
                   ЦЕНТР УПРАВЛЕНИЯ <span className="text-[#6C5DD3] text-sm align-top">v4.0</span>
@@ -149,7 +181,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Панель Администратора</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="flex items-center gap-2 px-4 py-2 bg-black/20 rounded-full border border-white/5">
+              <div className="flex items-center gap-2 px-4 py-2 bg-black/20 rounded-full border border-white/5 transition-colors hover:border-white/10">
                   <div className={`w-2 h-2 rounded-full ${config.features?.enableRealTimeSync ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`}></div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{config.features?.enableRealTimeSync ? 'LIVE SYNC' : 'OFFLINE'}</span>
               </div>
@@ -175,7 +207,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 { label: 'События', val: events.length, diff: '+2 новых', color: 'text-[#D4AF37]' },
                 { label: 'Система', val: '98%', diff: 'Норма', color: 'text-green-500' },
             ].map((stat, i) => (
-                <div key={i} className="bg-[#1F2128] p-5 rounded-[1.5rem] border border-white/5 relative overflow-hidden group hover:border-white/10 transition-all">
+                <div key={i} className="bg-[#1F2128] p-5 rounded-[1.5rem] border border-white/5 relative overflow-hidden group hover:border-white/10 transition-all hover:-translate-y-1 hover:shadow-lg">
                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
                     <div className="flex items-end justify-between">
                         <span className={`text-3xl font-black ${stat.color}`}>{stat.val}</span>
@@ -185,7 +217,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ))}
         </div>
 
-        {/* Activity Feed */}
+        {/* System Logs */}
         <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5">
              <div className="flex justify-between items-center mb-6">
                 <h3 className="text-white font-black text-lg">Системный журнал</h3>
@@ -225,7 +257,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* User List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredUsers.map((u, i) => (
-                    <div key={i} className="bg-[#1F2128] p-5 rounded-[1.5rem] border border-white/5 hover:border-[#6C5DD3]/50 transition-all group">
+                    <div key={i} className="bg-[#1F2128] p-5 rounded-[1.5rem] border border-white/5 hover:border-[#6C5DD3]/50 transition-all group hover:bg-[#252830]">
                         <div className="flex items-center gap-4 mb-4">
                             <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}`} className="w-12 h-12 rounded-full object-cover bg-slate-700 ring-2 ring-white/5" />
                             <div>
@@ -286,21 +318,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         </div>
 
-                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Активные права:</p>
-                            <ul className="space-y-1">
-                                {editingUser.role === 'STUDENT' && ['Доступ к обучению', 'Сдача заданий', 'Рейтинг'].map(p => (
-                                    <li key={p} className="text-white text-xs flex items-center gap-2"><span className="text-[#6C5DD3]">✓</span> {p}</li>
-                                ))}
-                                {editingUser.role === 'CURATOR' && ['Доступ к обучению', 'Проверка ДЗ', 'Панель куратора'].map(p => (
-                                    <li key={p} className="text-white text-xs flex items-center gap-2"><span className="text-[#6C5DD3]">✓</span> {p}</li>
-                                ))}
-                                {editingUser.role === 'ADMIN' && ['Полный доступ', 'Редактор контента', 'Управление пользователями'].map(p => (
-                                    <li key={p} className="text-white text-xs flex items-center gap-2"><span className="text-[#6C5DD3]">✓</span> {p}</li>
-                                ))}
-                            </ul>
-                        </div>
-
                         <div className="flex gap-2 pt-2">
                             <button 
                                 onClick={() => {
@@ -321,6 +338,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
         </div>
       );
+  };
+
+  const renderEvents = () => {
+    if (editingEvent) {
+        return (
+            <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 animate-slide-in space-y-4">
+                 <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                    <h3 className="text-white font-black text-xl">{editingEvent.id ? 'Редактирование события' : 'Новое событие'}</h3>
+                    <button onClick={() => setEditingEvent(null)} className="text-slate-400 hover:text-white text-xs font-bold uppercase">Отмена</button>
+                </div>
+                
+                <div className="space-y-4">
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Название события</label>
+                        <input value={editingEvent.title || ''} onChange={e => setEditingEvent({...editingEvent, title: e.target.value})} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 focus:border-[#D4AF37] outline-none font-bold" />
+                    </div>
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Описание</label>
+                        <textarea value={editingEvent.description || ''} onChange={e => setEditingEvent({...editingEvent, description: e.target.value})} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 outline-none text-sm" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                             <label className="text-[10px] font-bold text-slate-500 uppercase">Дата и Время</label>
+                             <input 
+                                type="datetime-local" 
+                                value={editingEvent.date ? new Date(editingEvent.date).toISOString().slice(0, 16) : ''} 
+                                onChange={e => setEditingEvent({...editingEvent, date: new Date(e.target.value).toISOString()})} 
+                                className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 outline-none font-bold text-sm"
+                             />
+                        </div>
+                         <div className="space-y-1">
+                             <label className="text-[10px] font-bold text-slate-500 uppercase">Тип</label>
+                             <select value={editingEvent.type || EventType.WEBINAR} onChange={e => setEditingEvent({...editingEvent, type: e.target.value as EventType})} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 outline-none font-bold">
+                                <option value={EventType.WEBINAR}>Вебинар</option>
+                                <option value={EventType.HOMEWORK}>Дедлайн ДЗ</option>
+                                <option value={EventType.OTHER}>Другое</option>
+                             </select>
+                         </div>
+                    </div>
+                    <button onClick={saveEvent} className="w-full bg-[#D4AF37] text-black py-4 rounded-xl font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#D4AF37]/20">Сохранить событие</button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+             <button onClick={() => setEditingEvent({})} className="w-full py-4 bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 rounded-[1.5rem] font-black uppercase tracking-widest hover:bg-[#D4AF37] hover:text-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#D4AF37]/5">
+                <span>+</span> Добавить событие
+            </button>
+
+            {events.map(ev => (
+                <div key={ev.id} className="bg-[#1F2128] p-5 rounded-[2rem] border border-white/5 flex items-center gap-4 hover:border-[#D4AF37]/30 transition-all group">
+                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg border border-white/10 ${ev.type === EventType.WEBINAR ? 'bg-[#6C5DD3]' : 'bg-[#D4AF37]'}`}>
+                        {ev.type === EventType.WEBINAR ? '📹' : '⏳'}
+                     </div>
+                     <div className="flex-1">
+                         <h4 className="text-white font-bold text-lg">{ev.title}</h4>
+                         <p className="text-slate-500 text-xs font-bold">{new Date(ev.date).toLocaleString('ru-RU')} • {ev.durationMinutes} мин</p>
+                     </div>
+                     <div className="flex gap-2">
+                        <button onClick={() => setEditingEvent(ev)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">✏️</button>
+                        <button onClick={() => deleteEvent(ev.id)} className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-colors">🗑️</button>
+                     </div>
+                </div>
+            ))}
+        </div>
+    );
   };
 
   const renderCourses = () => {
@@ -417,12 +502,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // List View
     return (
         <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setEditingModule({})} className="w-full py-4 bg-[#6C5DD3]/10 text-[#6C5DD3] border border-[#6C5DD3]/20 rounded-[1.5rem] font-black uppercase tracking-widest hover:bg-[#6C5DD3] hover:text-white transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setEditingModule({})} className="w-full py-4 bg-[#6C5DD3]/10 text-[#6C5DD3] border border-[#6C5DD3]/20 rounded-[1.5rem] font-black uppercase tracking-widest hover:bg-[#6C5DD3] hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#6C5DD3]/5">
                 <span>+</span> Создать модуль
             </button>
 
             {modules.map(mod => (
-                <div key={mod.id} className="bg-[#1F2128] rounded-[2rem] border border-white/5 overflow-hidden group">
+                <div key={mod.id} className="bg-[#1F2128] rounded-[2rem] border border-white/5 overflow-hidden group hover:border-[#6C5DD3]/30 transition-all">
                     <div className="p-5 flex justify-between items-center border-b border-white/5 bg-white/5">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-xl border border-white/10 shadow-inner">
@@ -464,7 +549,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const renderSettings = () => (
       <div className="space-y-6 animate-fade-in pb-24">
           {/* Main App Settings */}
-          <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 space-y-4">
+          <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 space-y-4 shadow-xl">
               <h3 className="text-white font-black text-lg flex items-center gap-2 mb-4">
                   <span className="text-[#6C5DD3]">⚙️</span> Общая конфигурация
               </h3>
@@ -481,7 +566,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Features & Permissions */}
-           <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 space-y-4">
+           <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 space-y-4 shadow-xl">
               <h3 className="text-white font-black text-lg flex items-center gap-2 mb-4">
                   <span className="text-blue-500">🛡️</span> Протоколы и Функции
               </h3>
@@ -494,7 +579,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       { key: 'allowStudentChat', label: 'Чат для студентов' },
                       { key: 'publicLeaderboard', label: 'Публичный рейтинг' },
                   ].map(feature => (
-                       <div key={feature.key} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5">
+                       <div key={feature.key} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5 transition-colors hover:border-white/10">
                            <span className="text-slate-300 text-xs font-bold">{feature.label}</span>
                            <button 
                              onClick={() => onUpdateConfig({
@@ -514,7 +599,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Integrations Section */}
-          <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 space-y-4">
+          <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 space-y-4 shadow-xl">
                <h3 className="text-white font-black text-lg flex items-center gap-2 mb-4">
                   <span className="text-green-500">🔌</span> Интеграции
               </h3>
@@ -547,7 +632,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           
           <button 
              onClick={() => { if(confirm('⚠️ ПОЛНЫЙ СБРОС СИСТЕМЫ? Это удалит все данные локально.')) { Storage.clear(); window.location.reload(); } }} 
-             className="w-full py-4 border border-red-500/30 text-red-500 rounded-[1.5rem] font-bold uppercase hover:bg-red-500/10 transition-colors text-xs tracking-widest"
+             className="w-full py-4 border border-red-500/30 text-red-500 rounded-[1.5rem] font-bold uppercase hover:bg-red-500/10 transition-colors text-xs tracking-widest shadow-lg shadow-red-500/5"
           >
               ЗАВОДСКОЙ СБРОС (FACTORY RESET)
           </button>
@@ -562,6 +647,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
            {activeTab === 'OVERVIEW' && renderOverview()}
            {activeTab === 'USERS' && renderUsers()}
            {activeTab === 'COURSE' && renderCourses()}
+           {activeTab === 'CALENDAR' && renderEvents()}
            {activeTab === 'SETTINGS' && renderSettings()}
        </div>
     </div>

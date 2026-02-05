@@ -116,6 +116,7 @@ export const SmartNav: React.FC<SmartNavProps> = ({
             { id: 'OVERVIEW', icon: '📊', label: 'Обзор' },
             { id: 'USERS', icon: '👥', label: 'Бойцы' },
             { id: 'COURSE', icon: '🎓', label: 'Курс' },
+            { id: 'CALENDAR', icon: '📅', label: 'План' },
             { id: 'SETTINGS', icon: '⚙️', label: 'Конфиг' },
         ];
 
