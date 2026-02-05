@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { generateSpartanAvatar } from '../services/geminiService';
 import { telegram } from '../services/telegramService';

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppConfig, Module, UserProgress, CalendarEvent, Lesson, AdminTab, ModuleCategory } from '../types';
 import { Button } from './Button';
@@ -300,6 +299,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         onChange={e => setEditingModule({...editingModule, imageUrl: e.target.value})}
                         className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-[#6C5DD3]"
                         placeholder="https://..."
+                      />
+                  </div>
+                  <div>
+                      <label className="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-1">Video URL (Optional)</label>
+                      <input 
+                        value={editingModule.videoUrl || ''}
+                        onChange={e => setEditingModule({...editingModule, videoUrl: e.target.value})}
+                        className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-[#6C5DD3]"
+                        placeholder="https://youtube.com/..."
                       />
                   </div>
                   
