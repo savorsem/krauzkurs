@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CalendarEvent, EventType } from '../types';
 import { MOCK_EVENTS } from '../constants';
@@ -96,7 +95,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
   };
 
   return (
-    <div className={`flex flex-col h-full animate-fade-in ${isDark ? 'text-white' : 'text-slate-900'}`}>
+    <div className={`flex flex-col h-full animate-fade-in text-white`}>
         {/* Sync Status Badge */}
         <div className="flex justify-between items-center mb-4">
             <span className="px-3 py-1 bg-[#D4AF37]/10 text-[#D4AF37] text-[9px] font-black uppercase tracking-[0.2em] rounded-full border border-[#D4AF37]/20">
@@ -112,10 +111,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
         </div>
 
         {/* Calendar Card */}
-        <div className={`p-5 rounded-[2.5rem] mb-8 border ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-100 shadow-sm'}`}>
+        <div className={`p-5 rounded-[2.5rem] mb-8 border bg-[#1F2128] border-white/5 shadow-lg`}>
             <div className="flex items-center justify-between mb-6">
                 <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-3 text-slate-500 hover:text-[#6C5DD3] transition-colors">←</button>
-                <span className="text-sm font-black uppercase tracking-widest">{monthNames[month]} {year}</span>
+                <span className="text-sm font-black uppercase tracking-widest text-white">{monthNames[month]} {year}</span>
                 <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-3 text-slate-500 hover:text-[#6C5DD3] transition-colors">→</button>
             </div>
 
@@ -133,7 +132,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
                 return (
                 <div key={day} onClick={() => { setSelectedDate(new Date(year, month, day)); telegram.haptic('selection'); }}
                     className={`aspect-square rounded-[1rem] flex flex-col items-center justify-center relative cursor-pointer transition-all
-                    ${isSelected ? 'bg-[#6C5DD3] text-white shadow-lg shadow-[#6C5DD3]/30 scale-105 z-10' : isDark ? 'hover:bg-white/10' : 'hover:bg-slate-50'}
+                    ${isSelected ? 'bg-[#6C5DD3] text-white shadow-lg shadow-[#6C5DD3]/30 scale-105 z-10' : 'hover:bg-white/5 text-slate-300'}
                     ${isToday && !isSelected ? 'border-2 border-[#D4AF37] text-[#D4AF37]' : ''}
                     `}
                 >
@@ -150,21 +149,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ externalEvents, isDa
         {/* Events list */}
         <div className="space-y-4 px-1">
             {selectedEvents.length === 0 ? (
-                <div className={`text-center py-8 rounded-[2rem] border-2 border-dashed ${isDark ? 'border-white/5 text-slate-600' : 'border-slate-100 text-slate-400'}`}>
+                <div className={`text-center py-8 rounded-[2rem] border-2 border-dashed border-white/5 text-slate-500`}>
                     <p className="font-bold text-xs uppercase tracking-widest">Боевых задач нет</p>
                 </div>
             ) : (
                 selectedEvents.map(event => (
-                    <div key={event.id} className={`p-5 rounded-[2rem] flex items-center gap-4 border ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-100'}`}>
+                    <div key={event.id} className={`p-5 rounded-[2rem] flex items-center gap-4 border bg-[#1F2128] border-white/5 hover:border-white/10 transition-colors`}>
                         <div className={`w-12 h-12 rounded-2xl ${getEventTypeColor(event.type)} flex items-center justify-center text-white text-xl shadow-lg opacity-80`}>
                             {event.type === EventType.WEBINAR ? '📹' : '📝'}
                         </div>
                         <div className="flex-1">
                             <div className="flex justify-between items-start">
-                                <h4 className="font-bold text-sm leading-tight">{event.title}</h4>
-                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg ${isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{formatTime(event.date)}</span>
+                                <h4 className="font-bold text-sm leading-tight text-white">{event.title}</h4>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg bg-white/5 text-slate-400`}>{formatTime(event.date)}</span>
                             </div>
-                            <p className={`text-[10px] font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{event.description}</p>
+                            <p className={`text-[10px] font-medium mt-1 text-slate-400`}>{event.description}</p>
                         </div>
                     </div>
                 ))

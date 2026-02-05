@@ -15,9 +15,10 @@ interface ErrorBoundaryState {
  * ErrorBoundary component to catch JavaScript errors anywhere in their child component tree,
  * log those errors, and display a fallback UI instead of the component tree that crashed.
  */
-// Fix: Explicitly extend Component imported from 'react' to resolve base class detection and 'props'/'state' property errors.
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Removed 'override' keyword which was causing compilation errors as TypeScript sometimes fails to detect React.Component as a class with overridable properties in certain environments.
+  // Explicitly declare props to satisfy TypeScript compiler
+  declare props: Readonly<ErrorBoundaryProps>;
+
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null
@@ -28,13 +29,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error };
   }
 
-  // Fix: Removed 'override' keyword as it is not needed for React lifecycle methods in standard TypeScript configurations and was causing detection issues.
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can also log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  // Fix: Removed 'override' keyword and ensured proper inheritance from Component to resolve "Property 'props' does not exist" errors.
   public render() {
     /* Using this.state correctly within Component scope */
     if (this.state.hasError) {
