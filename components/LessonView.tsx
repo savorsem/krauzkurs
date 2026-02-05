@@ -4,6 +4,9 @@ import ReactPlayer from 'react-player';
 import { Lesson, Module } from '../types';
 import { checkHomeworkWithAI } from '../services/geminiService';
 
+// Fix for TypeScript error where ReactPlayer props are not recognized correctly
+const VideoPlayer = ReactPlayer as unknown as React.ComponentType<any>;
+
 interface LessonViewProps {
   lesson: Lesson;
   isCompleted: boolean;
@@ -90,7 +93,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {hasVideo && (
             <div className="mb-8 shadow-2xl rounded-[1.5rem] overflow-hidden border border-white/20">
                  <div className="player-wrapper">
-                  <ReactPlayer className="react-player" url={parentModule.videoUrl} width="100%" height="100%" controls light={true} 
+                  <VideoPlayer className="react-player" url={parentModule!.videoUrl} width="100%" height="100%" controls light={true} 
                     playIcon={
                       <div className="w-16 h-16 bg-white/90 backdrop-blur rounded-full flex items-center justify-center pl-1 text-[#1A1A1A] shadow-xl hover:scale-110 transition-transform">
                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
