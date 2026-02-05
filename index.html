@@ -10,14 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-body: #0F1115;
-        --text-main: #FFFFFF;
+        --bg-body: #FDF3E7;
+        --text-main: #1F2128;
+        --text-muted: #6B6D7B;
         
-        /* Dynamic Theme Variables (Controlled by JS) */
-        --color-accent: #D4AF37; 
+        /* Modern UI Palette */
+        --color-accent: #6C5DD3; 
+        --color-orange: #FF9A62;
+        --color-blue: #C6CCFF;
         --radius-main: 2.5rem;
-        --card-border: 1px solid rgba(255,255,255,0.05);
-        --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        --radius-card: 2rem;
+        
+        --card-bg: #FFFFFF;
+        --card-border: 1px solid rgba(0,0,0,0.05);
+        --card-shadow: 0 10px 30px rgba(0,0,0,0.04);
 
         --safe-area-top: env(safe-area-inset-top);
         --safe-area-bottom: env(safe-area-inset-bottom);
@@ -35,148 +41,51 @@
         overscroll-behavior-y: none;
       }
 
-      /* CINEMATIC LIVE BACKGROUND */
-      .live-bg {
+      /* SOFT ATMOSPHERIC BACKGROUND */
+      .app-bg {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        z-index: -2;
-        background:
-            radial-gradient(circle at 15% 50%, rgba(74, 61, 141, 0.15), transparent 40%),
-            radial-gradient(circle at 85% 30%, rgba(108, 93, 211, 0.12), transparent 40%),
-            radial-gradient(circle at 50% 0%, rgba(42, 45, 61, 0.5) 0%, transparent 60%),
-            linear-gradient(180deg, #0F1115 0%, #000000 100%);
-        background-size: 200% 200%;
-        animation: atmosphereShift 45s ease-in-out infinite alternate;
-      }
-
-      @keyframes atmosphereShift {
-        0% { background-position: 0% 50%; transform: scale(1); }
-        25% { background-position: 40% 60%; transform: scale(1.05); }
-        50% { background-position: 100% 40%; transform: scale(1.02); }
-        75% { background-position: 60% 20%; transform: scale(1.08); }
-        100% { background-position: 0% 50%; transform: scale(1); }
-      }
-
-      .ambient-glow {
-        position: fixed;
-        width: 900px;
-        height: 900px;
-        background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
-        opacity: 0.08;
         z-index: -1;
-        top: -40%;
-        left: 20%;
-        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-        animation: 
-            floatComplex 35s infinite ease-in-out,
-            liquidMorph 20s infinite ease-in-out alternate;
-        mix-blend-mode: screen;
-        pointer-events: none;
-        filter: blur(80px);
+        background: var(--bg-body);
       }
 
-      .ambient-glow-secondary {
+      .decorative-blob {
         position: fixed;
-        width: 800px;
-        height: 800px;
-        background: radial-gradient(circle, #6C5DD3 0%, transparent 70%);
-        opacity: 0.06;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, #FF9A62 0%, transparent 70%);
+        opacity: 0.1;
+        top: -100px;
+        right: -100px;
         z-index: -1;
-        bottom: -20%;
-        right: -10%;
-        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-        animation: 
-            floatComplexReverse 40s infinite ease-in-out,
-            liquidMorph 25s infinite ease-in-out alternate-reverse;
-        mix-blend-mode: screen;
         pointer-events: none;
-        filter: blur(60px);
-      }
-
-      .cyber-grid {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 200vw;
-        height: 200vh;
-        z-index: -1;
-        background-image: 
-          linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-        background-size: 80px 80px;
-        left: -50%;
-        mask-image: radial-gradient(circle at 50% 0%, black 20%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle at 50% 0%, black 20%, transparent 80%);
-        pointer-events: none;
-        transform-origin: top center;
-        animation: gridFlyover 60s linear infinite;
-      }
-
-      @keyframes gridFlyover {
-        0% { transform: perspective(500px) rotateX(25deg) translateY(0) translateZ(0); }
-        50% { transform: perspective(500px) rotateX(25deg) translateY(-40px) translateZ(10px); }
-        100% { transform: perspective(500px) rotateX(25deg) translateY(-80px) translateZ(0); }
-      }
-
-      @keyframes floatComplex {
-        0% { transform: translate(-50%, 0) rotate(0deg) scale(1); }
-        25% { transform: translate(-40%, 25px) rotate(8deg) scale(1.05); }
-        50% { transform: translate(-60%, -20px) rotate(-5deg) scale(0.95); }
-        75% { transform: translate(-45%, 15px) rotate(3deg) scale(1.02); }
-        100% { transform: translate(-50%, 0) rotate(0deg) scale(1); }
-      }
-
-      @keyframes floatComplexReverse {
-        0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-        33% { transform: translate(-30px, -40px) rotate(-10deg) scale(1.1); }
-        66% { transform: translate(25px, -15px) rotate(8deg) scale(0.92); }
-        100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-      }
-
-      @keyframes liquidMorph {
-        0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-        25% { border-radius: 45% 55% 60% 40% / 55% 45% 40% 60%; }
-        50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-        75% { border-radius: 40% 60% 50% 50% / 40% 50% 60% 50%; }
-        100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
       }
 
       /* SCROLLBAR HIDING */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-      
       /* ANIMATIONS */
       .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; opacity: 0; }
       .animate-slide-in { animation: slideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; opacity: 0; }
       .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; transform: scale(0.95); }
-      .animate-pulse-slow { animation: pulseSlow 4s infinite; }
-      .animate-bounce-custom { animation: bounceCustom 2s infinite; }
 
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-      @keyframes pulseSlow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-      @keyframes bounceCustom { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-      /* GLASS UTILS */
       .glass {
-        background: rgba(31, 33, 40, 0.6);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: var(--card-border);
-        box-shadow: var(--card-shadow);
       }
       
-      .gold-glow:hover {
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
-        border-color: rgba(212, 175, 55, 0.4);
+      .pill-shadow {
+        box-shadow: 0 4px 14px rgba(0,0,0,0.06);
       }
     </style>
   <script type="importmap">
@@ -195,10 +104,8 @@
 </script>
 </head>
   <body>
-    <div class="live-bg"></div>
-    <div class="ambient-glow"></div>
-    <div class="ambient-glow-secondary"></div>
-    <div class="cyber-grid"></div>
+    <div class="app-bg"></div>
+    <div class="decorative-blob"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
