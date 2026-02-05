@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Module, UserProgress, Lesson, ModuleCategory, ThemeConfig } from '../types';
 import { Notebook } from './Notebook';

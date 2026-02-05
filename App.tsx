@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tab, UserProgress, Lesson, AppConfig, Module, CalendarEvent, AdminTab } from './types';
 import { COURSE_MODULES, MOCK_EVENTS } from './constants';

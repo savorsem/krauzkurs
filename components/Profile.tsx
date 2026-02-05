@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { UserProgress, CalendarEvent, ThemeConfig, NotificationSettings, ShopItem, NewsItem } from '../types';
 import { telegram } from '../services/telegramService';
+import { generateSpartanAvatar } from '../services/geminiService';
 import { Button } from './Button';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
@@ -32,17 +32,61 @@ const NEWS_ITEMS: NewsItem[] = [
     { id: 'n3', type: 'ALERT', title: 'Технические работы', date: '3 дня назад', content: 'Связь с сервером восстановлена. Прогресс синхронизирован.' },
 ];
 
+const ARMOR_OPTIONS = [
+  { id: 'Classic Bronze', label: 'Легионер', icon: '🏺' }, 
+  { id: 'Midnight Stealth', label: 'Тень', icon: '🌑' }, 
+  { id: 'Golden God', label: 'Командир', icon: '👑' }, 
+  { id: 'Futuristic Chrome', label: 'Кибер', icon: '🦾' }
+];
+
+const BACKGROUND_OPTIONS = [
+  { id: 'Ancient Battlefield', label: 'Поле Битвы', icon: '⚔️' },
+  { id: 'Temple of Olympus', label: 'Олимп', icon: '🏛️' },
+  { id: 'Stormy Peak', label: 'Шторм', icon: '⚡' },
+  { id: 'Volcanic Gates', label: 'Вулкан', icon: '🔥' },
+  { id: 'Sci-Fi Command Center', label: 'Штаб', icon: '🖥️' },
+  { id: 'Training Grounds', label: 'Арена', icon: '🏋️' },
+  { id: 'Nebula Vista', label: 'Космос', icon: '🌌' },
+];
+
+interface ModalProps {
+    title: string;
+    children: React.ReactNode;
+    onClose: () => void;
+}
+
+const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center animate-fade-in">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+        <div className="bg-[#1F2128] w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[80vh] sm:rounded-[2rem] rounded-t-[2.5rem] p-6 flex flex-col relative z-10 animate-slide-in border border-white/10 shadow-2xl">
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden"></div>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black text-white">{title}</h2>
+                <button onClick={onClose} className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-slate-400 hover:text-white">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
+                {children}
+            </div>
+        </div>
+    </div>
+);
+
 export const Profile: React.FC<ProfileProps> = ({ 
     userProgress, 
     onLogout, 
     onUpdateUser, 
     onClose,
 }) => {
-  const [activeModal, setActiveModal] = useState<'NONE' | 'SETTINGS' | 'SHOP' | 'NEWS'>('NONE');
+  const [activeModal, setActiveModal] = useState<'NONE' | 'SETTINGS' | 'SHOP' | 'NEWS' | 'CUSTOMIZE'>('NONE');
   
   // Settings State
   const [editName, setEditName] = useState(userProgress.name);
   const [notifState, setNotifState] = useState<NotificationSettings>(userProgress.notifications);
+
+  // Customization State
+  const [selectedArmor, setSelectedArmor] = useState(userProgress.armorStyle || 'Classic Bronze');
+  const [selectedBg, setSelectedBg] = useState(userProgress.backgroundStyle || 'Ancient Battlefield');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const statsData = [
       { subject: 'Sales', A: userProgress.stats.skills.sales, fullMark: 100 },
@@ -63,9 +107,7 @@ export const Profile: React.FC<ProfileProps> = ({
 
   const handleBuyItem = (item: ShopItem) => {
       if (userProgress.inventory?.includes(item.id)) {
-          // Equip logic
           if (item.type === 'ARMOR') onUpdateUser({ armorStyle: item.value });
-          // Theme changing logic would go here via callback to App
           telegram.haptic('selection');
           return;
       }
@@ -82,27 +124,43 @@ export const Profile: React.FC<ProfileProps> = ({
       }
   };
 
-  const Modal = ({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) => (
-      <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center animate-fade-in">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
-          <div className="bg-[#1F2128] w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[80vh] sm:rounded-[2rem] rounded-t-[2.5rem] p-6 flex flex-col relative z-10 animate-slide-in border border-white/10 shadow-2xl">
-              <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden"></div>
-              <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-black text-white">{title}</h2>
-                  <button onClick={onClose} className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-slate-400 hover:text-white">✕</button>
-              </div>
-              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
-                  {children}
-              </div>
-          </div>
-      </div>
-  );
+  const handleRegenerateAvatar = async () => {
+      if (!userProgress.originalPhotoBase64) {
+          alert("Отсутствует исходное фото. Невозможно обновить аватар.");
+          return;
+      }
+      
+      setIsGenerating(true);
+      telegram.haptic('medium');
+
+      const newAvatarUrl = await generateSpartanAvatar(
+          userProgress.originalPhotoBase64,
+          userProgress.level,
+          selectedArmor,
+          selectedBg
+      );
+
+      setIsGenerating(false);
+
+      if (newAvatarUrl) {
+          onUpdateUser({
+              avatarUrl: newAvatarUrl,
+              armorStyle: selectedArmor,
+              backgroundStyle: selectedBg
+          });
+          setActiveModal('NONE');
+          telegram.haptic('success');
+      } else {
+          alert("Ошибка генерации. Попробуйте позже.");
+          telegram.haptic('error');
+      }
+  };
 
   const renderShop = () => (
       <div className="grid grid-cols-2 gap-3">
           {SHOP_ITEMS.map(item => {
               const isOwned = userProgress.inventory?.includes(item.id);
-              const isEquipped = userProgress.armorStyle === item.value; // Simple check for armor
+              const isEquipped = userProgress.armorStyle === item.value;
               
               return (
                 <div key={item.id} className={`p-4 rounded-2xl border ${isOwned ? 'bg-[#1F2128] border-white/10' : 'bg-[#131419] border-white/5'} flex flex-col items-center text-center relative overflow-hidden group`}>
@@ -147,6 +205,63 @@ export const Profile: React.FC<ProfileProps> = ({
       </div>
   );
 
+  const renderCustomize = () => (
+      <div className="space-y-6">
+          <div className="flex justify-center">
+              <div className="relative w-40 h-40">
+                  <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#6C5DD3] bg-[#1F2128] shadow-[0_0_30px_rgba(108,93,211,0.3)]">
+                      <img src={userProgress.avatarUrl} className={`w-full h-full object-cover transition-opacity ${isGenerating ? 'opacity-50' : 'opacity-100'}`} />
+                  </div>
+                  {isGenerating && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                  )}
+              </div>
+          </div>
+
+          <div>
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Стиль Брони</h3>
+              <div className="grid grid-cols-2 gap-2">
+                  {ARMOR_OPTIONS.map(opt => (
+                      <button 
+                        key={opt.id}
+                        onClick={() => setSelectedArmor(opt.id)}
+                        className={`p-3 rounded-xl border flex items-center gap-3 transition-all ${selectedArmor === opt.id ? 'bg-[#6C5DD3] border-[#6C5DD3] text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
+                      >
+                          <span className="text-xl">{opt.icon}</span>
+                          <span className="text-[10px] font-bold uppercase">{opt.label}</span>
+                      </button>
+                  ))}
+              </div>
+          </div>
+
+          <div>
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Окружение</h3>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                  {BACKGROUND_OPTIONS.map(opt => (
+                      <button 
+                        key={opt.id}
+                        onClick={() => setSelectedBg(opt.id)}
+                        className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all ${selectedBg === opt.id ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
+                      >
+                          <span className="mr-2">{opt.icon}</span>
+                          <span className="text-[10px] font-bold uppercase">{opt.label}</span>
+                      </button>
+                  ))}
+              </div>
+          </div>
+
+          <Button fullWidth onClick={handleRegenerateAvatar} disabled={isGenerating} icon={isGenerating ? null : '⚡'}>
+              {isGenerating ? 'КОВКА БРОНИ...' : 'ОБНОВИТЬ АВАТАР'}
+          </Button>
+          
+          <p className="text-center text-[9px] text-slate-500 max-w-xs mx-auto">
+              *Используется AI для генерации уникального образа на основе вашего исходного фото и уровня.
+          </p>
+      </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#0F1115] text-white pb-40 animate-fade-in relative font-sans overflow-hidden">
       {/* Dynamic Background */}
@@ -155,6 +270,7 @@ export const Profile: React.FC<ProfileProps> = ({
 
       {activeModal === 'SHOP' && <Modal title="Арсенал (Магазин)" onClose={() => setActiveModal('NONE')}>{renderShop()}</Modal>}
       {activeModal === 'NEWS' && <Modal title="Сводка Штаба" onClose={() => setActiveModal('NONE')}>{renderNews()}</Modal>}
+      {activeModal === 'CUSTOMIZE' && <Modal title="Кастомизация" onClose={() => setActiveModal('NONE')}>{renderCustomize()}</Modal>}
       
       {activeModal === 'SETTINGS' && (
            <Modal title="Настройки Профиля" onClose={() => setActiveModal('NONE')}>
@@ -190,11 +306,14 @@ export const Profile: React.FC<ProfileProps> = ({
       {/* PROFILE CARD */}
       <div className="relative z-10 px-6 mb-8">
           <div className="flex flex-col items-center">
-              <div className="relative w-32 h-32 mb-4 group">
+              <div className="relative w-32 h-32 mb-4 group cursor-pointer" onClick={() => setActiveModal('CUSTOMIZE')}>
                   <div className="absolute inset-0 border-2 border-[#D4AF37] rounded-full animate-spin-slow opacity-50"></div>
                   <div className="absolute -inset-2 border border-white/10 rounded-full"></div>
                   <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#0F1115] relative z-10 bg-[#1F2128]">
                       <img src={userProgress.avatarUrl || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full z-30 backdrop-blur-sm">
+                      <span className="text-2xl">🎨</span>
                   </div>
                   <div className="absolute bottom-0 right-0 bg-[#00B050] w-8 h-8 rounded-full border-4 border-[#0F1115] z-20 flex items-center justify-center text-[10px] font-black text-black shadow-lg">
                       {userProgress.level}
