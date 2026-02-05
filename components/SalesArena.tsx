@@ -52,15 +52,16 @@ export const SalesArena: React.FC = () => {
 
     // Real-time Feedback Debounce
     useEffect(() => {
-        if (!activeScenario || !inputText || inputText.length < 10) {
+        if (!activeScenario || !inputText || inputText.length < 5) {
             setTypingHint(null);
+            setIsHintLoading(false);
             return;
         }
 
         const lastModelMsg = [...history].reverse().find(m => m.role === 'model')?.text || '';
         
+        setIsHintLoading(true);
         const timer = setTimeout(async () => {
-            setIsHintLoading(true);
             const hint = await getArenaHint(
                 activeScenario.clientRole, 
                 activeScenario.objective, 
@@ -69,7 +70,7 @@ export const SalesArena: React.FC = () => {
             );
             if (hint) setTypingHint(hint);
             setIsHintLoading(false);
-        }, 1000); // 1s debounce
+        }, 1200); // 1.2s debounce to avoid flickering
 
         return () => clearTimeout(timer);
     }, [inputText, activeScenario, history]);
@@ -102,6 +103,7 @@ export const SalesArena: React.FC = () => {
         setHistory(updatedHistory);
         setInputText('');
         setTypingHint(null); // Clear hint on send
+        setIsHintLoading(false);
         setIsLoading(true);
 
         const responseText = await sendMessageToGemini(chatSession, userMsg.text);
@@ -240,16 +242,25 @@ export const SalesArena: React.FC = () => {
             <div className="fixed bottom-0 left-0 right-0 p-5 bg-[#0F1115]/80 backdrop-blur-xl border-t border-white/5 z-20">
                 {/* Typing Hint Bubble */}
                 {(typingHint || isHintLoading) && (
-                    <div className="absolute -top-12 left-6 right-6 flex justify-center pointer-events-none animate-slide-in">
-                        <div className="bg-[#1F2128] border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-xl backdrop-blur-md">
-                            <span className="text-lg">👂</span>
+                    <div className="absolute -top-14 left-0 right-0 flex justify-center pointer-events-none z-30">
+                        <div className={`
+                            bg-[#1F2128] border border-[#6C5DD3]/30 rounded-full px-5 py-3 flex items-center gap-3 shadow-[0_0_20px_rgba(108,93,211,0.2)] backdrop-blur-md transition-all duration-300
+                            ${isHintLoading ? 'scale-90 opacity-80' : 'scale-100 opacity-100 animate-slide-up'}
+                        `}>
+                            <span className="text-xl">🛡️</span>
                             {isHintLoading ? (
-                                <div className="flex gap-1 h-3 items-center">
-                                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></div>
-                                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce delay-75"></div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Анализ тактики</span>
+                                    <div className="flex gap-1 h-3 items-center">
+                                        <div className="w-1 h-1 bg-[#6C5DD3] rounded-full animate-bounce"></div>
+                                        <div className="w-1 h-1 bg-[#6C5DD3] rounded-full animate-bounce delay-75"></div>
+                                    </div>
                                 </div>
                             ) : (
-                                <span className="text-xs font-bold text-slate-300 italic">{typingHint}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black text-[#6C5DD3] uppercase tracking-widest mb-0.5">СОВЕТ КОМАНДИРА</span>
+                                    <span className="text-xs font-bold text-white italic">"{typingHint}"</span>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -262,7 +273,7 @@ export const SalesArena: React.FC = () => {
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                         disabled={!!battleResult}
                         placeholder={battleResult ? "Бой окончен" : "Ваш аргумент..."}
-                        className="flex-1 bg-white/5 text-white rounded-[1.2rem] px-6 py-4 focus:outline-none focus:ring-2 focus:ring-[#6C5DD3]/50 focus:bg-white/10 border border-white/5 placeholder:text-slate-600 font-bold text-sm transition-all"
+                        className={`flex-1 bg-white/5 text-white rounded-[1.2rem] px-6 py-4 focus:outline-none focus:ring-2 border placeholder:text-slate-600 font-bold text-sm transition-all ${isHintLoading ? 'border-[#6C5DD3]/50 focus:bg-[#6C5DD3]/5' : 'border-white/5 focus:bg-white/10'}`}
                     />
                     <button 
                         onClick={handleSend}

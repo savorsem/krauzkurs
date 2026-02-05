@@ -53,17 +53,17 @@ export const getArenaHint = async (
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `
-      Context: Sales Roleplay.
+      Rol: Spartan Sales Commander (Coach).
+      Context: User is in a roleplay battle.
       Client Role: ${clientRole}
-      User Goal: ${objective}
-      Last Client Message: "${lastClientMessage}"
+      User Objective: ${objective}
+      Client said: "${lastClientMessage}"
       User is typing: "${userDraft}"
       
-      Task: Act as a sales coach whispering a hint.
-      Analyze the user's draft. Is it aggressive? Weak? Good? 
-      Provide a VERY SHORT (max 8 words) tactical hint or correction. 
-      If it's good, say "Good tactic".
-      Lang: Russian.
+      Task: Analyze the user's draft. Provide a SHORT, STRICT tactical command (max 5 words) in Russian.
+      Examples: "Too weak. Push harder.", "Don't apologize.", "Ask an open question.", "Good. Close the deal."
+      
+      Output ONLY the command.
     `;
 
     const response = await ai.models.generateContent({
