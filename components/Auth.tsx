@@ -181,83 +181,103 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   const renderAuthForm = () => (
     <div className={`space-y-8 w-full animate-fade-in ${isShake ? 'animate-shake' : ''}`}>
        {/* Brand Header */}
-       <div className="text-center relative">
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#6C5DD3] rounded-full blur-[60px] opacity-30 pointer-events-none"></div>
-           <div className="w-20 h-20 bg-[#1F2128] border border-white/10 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-xl mb-4 relative z-10">
-             <span className="animate-pulse">🛡️</span>
+       <div className="text-center relative pt-4">
+           {/* Purple/Blue circle backdrop */}
+           <div className="relative mx-auto w-32 h-32 flex items-center justify-center">
+               <div className="absolute inset-0 bg-gradient-to-b from-[#4A3D8D] to-[#2D2A4A] rounded-full opacity-60"></div>
+               {/* Shield Icon Replacement */}
+               <div className="relative z-10 w-16 h-16 bg-[#131419] border border-white/10 rounded-xl flex items-center justify-center shadow-2xl">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 2L5 8.5V17.5C5 25.1 11.4 33.2 20 38C28.6 33.2 35 25.1 35 17.5V8.5L20 2Z" fill="#2A2D35" stroke="white" strokeWidth="1.5"/>
+                        <path d="M20 10L12 14V18C12 23 15.5 28.5 20 32C24.5 28.5 28 23 28 18V14L20 10Z" fill="#FF4B4B"/>
+                        <path d="M20 10L28 14V18C28 23 24.5 28.5 20 32V10Z" fill="#F9FAFB" opacity="0.8"/>
+                    </svg>
+               </div>
+               
+               {/* Krauz Academy Overlap Text */}
+               <div className="absolute -right-16 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                   <span className="text-lg font-black text-[#A5B4FC] tracking-tighter drop-shadow-lg">KRAUZ ACADEMY</span>
+               </div>
            </div>
-           <h1 className="text-3xl font-black text-white tracking-tighter">SALES<span className="text-[#6C5DD3]">PRO</span></h1>
-           <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.4em]">Spartan Edition</p>
+
+           <div className="mt-4">
+               <h1 className="text-2xl font-black text-white tracking-tighter flex items-center justify-center gap-1">
+                   SALES<span className="text-[#6C5DD3]">PRO</span>
+               </h1>
+               <p className="text-slate-500 font-bold text-[8px] uppercase tracking-[0.4em]">Spartan Edition</p>
+           </div>
        </div>
 
        {/* Mode Toggle */}
-       <div className="bg-[#131419] p-1 rounded-xl flex border border-white/5 relative">
+       <div className="bg-[#131419]/60 p-1 rounded-xl flex border border-white/5 relative mx-2">
           <div 
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#6C5DD3] rounded-lg transition-all duration-300 shadow-lg shadow-[#6C5DD3]/20 ${isRegisterMode ? 'left-[calc(50%+2px)]' : 'left-1'}`}
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#4A3D8D]/80 rounded-lg transition-all duration-300 shadow-lg ${isRegisterMode ? 'left-[calc(50%+2px)]' : 'left-1'}`}
           ></div>
           <button 
              onClick={() => { setIsRegisterMode(false); setErrors({}); }} 
-             className={`flex-1 py-3 text-xs font-black uppercase tracking-widest relative z-10 transition-colors ${!isRegisterMode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${!isRegisterMode ? 'text-white' : 'text-slate-500'}`}
           >
-             Вход
+             вход
           </button>
           <button 
              onClick={() => { setIsRegisterMode(true); setErrors({}); }} 
-             className={`flex-1 py-3 text-xs font-black uppercase tracking-widest relative z-10 transition-colors ${isRegisterMode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${isRegisterMode ? 'text-white' : 'text-slate-500'}`}
           >
-             Вступить
+             вступить
           </button>
        </div>
 
        {/* Form Fields */}
-       <div className="space-y-4">
+       <div className="space-y-4 px-2">
            <div className="relative group">
                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className={`h-5 w-5 transition-colors ${errors.username ? 'text-red-500' : 'text-slate-500 group-focus-within:text-[#6C5DD3]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <svg className={`h-5 w-5 ${errors.username ? 'text-red-500' : 'text-slate-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                </div>
                <input 
                  value={username} 
                  onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_@]/g, ''))} 
-                 className={`w-full bg-[#131419] border ${errors.username ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3] focus:ring-1 focus:ring-[#6C5DD3] transition-all`}
+                 className={`w-full bg-[#131419]/80 border ${errors.username ? 'border-red-500/50' : 'border-white/5'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3]/50 transition-all`}
                  placeholder="Telegram Username"
                />
            </div>
 
            <div className="relative group">
                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className={`h-5 w-5 transition-colors ${errors.password ? 'text-red-500' : 'text-slate-500 group-focus-within:text-[#6C5DD3]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg className={`h-5 w-5 ${errors.password ? 'text-red-500' : 'text-slate-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                </div>
                <input 
                  type="password"
                  value={password} 
                  onChange={e => setPassword(e.target.value)} 
-                 className={`w-full bg-[#131419] border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3] focus:ring-1 focus:ring-[#6C5DD3] transition-all`}
+                 className={`w-full bg-[#131419]/80 border ${errors.password ? 'border-red-500/50' : 'border-white/5'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3]/50 transition-all`}
                  placeholder="Код доступа"
                />
            </div>
            
            {(errors.username || errors.password) && (
-               <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center gap-2">
+               <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center gap-2 mx-2">
                    <span className="text-red-500">⚠️</span>
                    <p className="text-red-400 text-xs font-bold">{errors.username || errors.password}</p>
                </div>
            )}
        </div>
 
-       <Button 
-            fullWidth 
-            onClick={handleAuthSubmit} 
-            className="!rounded-2xl !py-4 shadow-lg shadow-[#6C5DD3]/20 border border-[#6C5DD3]/50 relative overflow-hidden group"
-       >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            {isRegisterMode ? 'ИНИЦИАЛИЗАЦИЯ' : 'ДОСТУП К ТЕРМИНАЛУ'} 
-            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-          </span>
-       </Button>
+       <div className="px-2">
+           <button 
+                onClick={handleAuthSubmit} 
+                className="w-full bg-[#2B4E99] text-white rounded-2xl py-4 px-6 font-black text-xs uppercase tracking-widest shadow-xl shadow-[#2B4E99]/20 hover:bg-[#345DB3] active:scale-95 transition-all flex items-center justify-center gap-3"
+           >
+              {isRegisterMode ? 'ИНИЦИАЛИЗАЦИЯ' : 'ДОСТУП К ТЕРМИНАЛУ'} 
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+           </button>
+       </div>
     </div>
   );
 
@@ -426,13 +446,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
          
          {/* Grid Floor */}
          <div className="fixed bottom-0 left-0 w-full h-[30vh] bg-[linear-gradient(to_top,#0F1115_0%,transparent_100%)] z-10"></div>
-         <div className="fixed inset-0 opacity-[0.03] z-0" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+         {/* Updated Background Grid for better contrast matching screenshot */}
+         <div className="fixed inset-0 opacity-[0.05] z-0" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
          {/* Main Card */}
          <div className="w-full max-w-sm relative z-20">
-             <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+             <div className="glass-panel p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden backdrop-blur-xl">
                  {/* Top sheen */}
-                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                  
                  {/* Step Content */}
                  {step === 'AUTH_FORM' && renderAuthForm()}
@@ -442,9 +463,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
                  {step === 'FINALIZING' && renderFinalizing()}
              </div>
              
-             {/* Footer copyright */}
-             <div className="text-center mt-6 opacity-30">
-                 <p className="text-[9px] text-white uppercase tracking-[0.3em]">Spartan Sales OS v4.0</p>
+             {/* Footer copyright matching screenshot exactly */}
+             <div className="text-center mt-8 opacity-40">
+                 <p className="text-[9px] text-white uppercase tracking-[0.4em] font-medium">SPARTAN SALES OS V4.0</p>
              </div>
          </div>
     </div>

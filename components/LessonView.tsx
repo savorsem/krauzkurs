@@ -10,9 +10,10 @@ const VideoPlayer = ReactPlayer as unknown as React.ComponentType<any>;
 interface LessonViewProps {
   lesson: Lesson;
   isCompleted: boolean;
-  onComplete: (lessonId: string) => void;
+  onComplete: (lessonId: string, bonusXp: number) => void;
   onBack: () => void;
   parentModule?: Module;
+  onAskQuestion: (question: string) => void;
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({ 
@@ -20,7 +21,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   isCompleted, 
   onComplete, 
   onBack, 
-  parentModule 
+  parentModule,
+  onAskQuestion
 }) => {
   const [inputText, setInputText] = useState('');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -28,17 +30,19 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   
+  // Question State
+  const [questionText, setQuestionText] = useState('');
+  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate PDF for FILE type
       if (lesson.homeworkType === 'FILE' && file.type !== 'application/pdf') {
           alert('Только файлы PDF доступны для загрузки.');
           return;
       }
-      
       setFileName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -46,6 +50,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const calculateHomeworkBonus = (quality: 'GOOD' | 'BAD', isLate: boolean) => {
+    if (quality === 'BAD') return 5;
+    if (!isLate) return 20;
+    return 10;
   };
 
   const handleSubmit = async () => {
@@ -61,33 +71,34 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
     setIsSubmitting(false);
     if (result.passed) {
-        onComplete(lesson.id);
-        setFeedback(result.feedback);
+        const isLate = false; 
+        const bonus = calculateHomeworkBonus('GOOD', isLate);
+        
+        onComplete(lesson.id, bonus);
+        setFeedback(`${result.feedback} (+${bonus} XP за выполнение)`);
     } else {
         setFeedback(result.feedback);
     }
   };
 
+  const handleSendQuestion = () => {
+    if(!questionText.trim()) return;
+    onAskQuestion(questionText);
+    setQuestionText('');
+    setIsQuestionModalOpen(false);
+    alert('Вопрос отправлен куратору! (+10 XP)');
+  };
+
   const hasVideo = !!parentModule?.videoUrl;
-  
   const isSubmitDisabled = isSubmitting || (lesson.homeworkType === 'TEXT' ? !inputText.trim() : !selectedFile);
 
-  return (
-    <div className="flex flex-col min-h-screen pb-32 w-full animate-slide-in">
-      {/* GLASS HEADER */}
-      <div className="sticky top-0 z-30 px-5 py-4 flex items-center justify-between glass border-b-0 rounded-b-[2rem] mb-6 shadow-sm">
-        <button onClick={onBack} className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1A1A1A] shadow-soft active:scale-95 transition-transform">
-           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-           </svg>
-        </button>
-        <div className="flex flex-col items-center">
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Урок</span>
-             <span className="text-xs font-bold text-[#1A1A1A] max-w-[150px] truncate">{lesson.title}</span>
-        </div>
-        <div className="w-10"></div>
-      </div>
+  // Expose question modal opener to parent via props if needed, but here we handle it internally
+  // The SmartNav triggers onAskQuestion directly, but if we need a modal UI inside this view triggered by SmartNav...
+  // Actually, the SmartNav in App.tsx will trigger a global state or callback. 
+  // For this component, we will just render the content.
 
+  return (
+    <div className="flex flex-col min-h-screen pb-32 w-full animate-slide-in relative pt-12">
       <div className="px-5">
         {/* VIDEO PLAYER */}
         {hasVideo && (
@@ -107,37 +118,40 @@ export const LessonView: React.FC<LessonViewProps> = ({
         )}
 
         {/* CONTENT CARD */}
-        <div className="glass p-6 md:p-8 rounded-[2rem] shadow-soft mb-6">
+        <div className="glass p-6 md:p-8 rounded-[2rem] shadow-soft mb-6 bg-[#1F2128] border border-white/5">
             <div className="flex items-center gap-3 mb-5">
-               <span className="bg-[#1A1A1A] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                 +{lesson.xpReward} XP
+               <span className="bg-[#1A1A1A] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg border border-white/10">
+                 +{lesson.xpReward} XP Base
                </span>
-               {isCompleted && <span className="text-[#00B050] text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+               <span className="bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg border border-[#D4AF37]/20">
+                 +20 XP Bonus
+               </span>
+               {isCompleted && <span className="text-[#00B050] text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ml-auto">
                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
-                   Выполнено
+                   DONE
                </span>}
             </div>
 
-            <h2 className="text-2xl md:text-3xl font-black text-[#1A1A1A] mb-4 leading-tight tracking-tight">{lesson.title}</h2>
-            <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed">{lesson.description}</p>
-            <div className="w-full h-px bg-slate-200 mb-6"></div>
-            <div className="prose prose-slate max-w-none text-[#1A1A1A] leading-7 font-medium whitespace-pre-line text-sm md:text-base">
+            <h2 className="text-2xl md:text-3xl font-black text-white mb-4 leading-tight tracking-tight">{lesson.title}</h2>
+            <p className="text-slate-400 text-sm font-medium mb-6 leading-relaxed">{lesson.description}</p>
+            <div className="w-full h-px bg-white/5 mb-6"></div>
+            <div className="prose prose-invert max-w-none text-slate-300 leading-7 font-medium whitespace-pre-line text-sm md:text-base">
                 {lesson.content}
             </div>
         </div>
 
         {/* HOMEWORK SECTION */}
         {!isCompleted ? (
-            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 bg-[#1A1A1A]"></div>
+            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl mb-8">
+                <div className="absolute inset-0 bg-[#131419]"></div>
                 <div className="relative z-10 p-6 md:p-8 text-white">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl border border-white/10">
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl border border-white/10">
                             {lesson.homeworkType === 'VIDEO' ? '📹' : lesson.homeworkType === 'PHOTO' ? '📸' : lesson.homeworkType === 'FILE' ? '📄' : '✍️'}
                         </div>
                         <div>
-                        <h3 className="font-bold text-lg leading-tight">Боевая задача</h3>
-                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">Отчет командованию</p>
+                        <h3 className="font-bold text-lg leading-tight">Mission Objective</h3>
+                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">Submit Report</p>
                         </div>
                     </div>
                     
@@ -149,7 +163,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                         <textarea
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
-                            placeholder="Ваш ответ..."
+                            placeholder="Type your report..."
                             className="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/10 focus:border-[#4B6BFB] outline-none h-40 mb-6 resize-none text-sm placeholder:text-white/20 transition-colors"
                         />
                     ) : (
@@ -165,15 +179,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
                                 <div className="flex flex-col items-center justify-center p-4">
                                     <span className="text-[#00B050] text-2xl mb-2">✓</span>
                                     <span className="text-[#00B050] font-bold text-xs text-center break-all">
-                                        {lesson.homeworkType === 'FILE' && fileName ? fileName : 'Материал загружен'}
+                                        {lesson.homeworkType === 'FILE' && fileName ? fileName : 'File Ready'}
                                     </span>
-                                    {lesson.homeworkType === 'FILE' && <span className="text-white/40 text-[9px] mt-1 uppercase tracking-widest">PDF Ready</span>}
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center">
                                     <span className="text-white/40 text-2xl mb-2">+</span>
                                     <span className="text-white/40 text-xs uppercase font-bold tracking-wide">
-                                        {lesson.homeworkType === 'FILE' ? 'Загрузить PDF' : lesson.homeworkType === 'VIDEO' ? 'Загрузить видео' : 'Загрузить фото'}
+                                        Upload Evidence
                                     </span>
                                 </div>
                             )}
@@ -182,7 +195,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                     
                     {feedback && (
                         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-fade-in">
-                            <p className="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1">Вердикт</p>
+                            <p className="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1">Commander's Verdict</p>
                             <p className="text-white text-sm leading-relaxed">{feedback}</p>
                         </div>
                     )}
@@ -192,14 +205,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
                         disabled={isSubmitDisabled} 
                         className="w-full py-4 bg-white text-black rounded-xl font-black text-xs uppercase tracking-[0.15em] hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
-                        {isSubmitting ? 'Анализ...' : 'Отправить задание'}
+                        {isSubmitting ? 'ANALYZING...' : 'SUBMIT MISSION'}
                     </button>
                 </div>
             </div>
         ) : (
-            <div className="bg-[#E8F7F0] rounded-[2.5rem] p-8 text-center border border-[#00B050]/20 mb-8 animate-fade-in">
+            <div className="bg-[#00B050]/10 rounded-[2.5rem] p-8 text-center border border-[#00B050]/20 mb-8 animate-fade-in">
                 <div className="w-12 h-12 bg-[#00B050] text-white rounded-full flex items-center justify-center text-xl mx-auto mb-3 shadow-lg shadow-green-500/30">✓</div>
-                <p className="text-[#00B050] font-black text-lg uppercase tracking-widest">Принято</p>
+                <p className="text-[#00B050] font-black text-lg uppercase tracking-widest">MISSION ACCOMPLISHED</p>
                 {feedback && <p className="text-[#00B050] text-sm mt-3 opacity-80 leading-relaxed font-medium">{feedback}</p>}
             </div>
         )}

@@ -12,7 +12,7 @@ export interface Lesson {
   aiGradingInstruction: string;
 }
 
-export type ModuleCategory = 'SALES' | 'PSYCHOLOGY' | 'TACTICS' | 'GENERAL';
+export type ModuleCategory = 'SALES' | 'PSYCHOLOGY' | 'TACTICS' | 'GENERAL' | 'NOTEBOOK';
 
 export interface Module {
   id: string;
@@ -42,11 +42,24 @@ export interface NotificationSettings {
   chatNotifications: boolean;
 }
 
+export interface UserStats {
+  referrals: number; // 10,000 XP
+  storyReposts: number; // Max 5, 400 XP each
+  questionsAsked: Record<string, number>; // LessonID -> count, max 5 per lesson
+  notebookEntries: {
+    habits: number; // 5 XP
+    goals: number; // 10 XP
+    gratitude: number; // 10 XP
+  };
+  suggestionsMade: number; // 50 XP
+  webinarsAttended: number; // 100 XP
+}
+
 export interface UserProgress {
   id?: string;
-  telegramId?: string; // Replaces generic ID for Telegram users
-  telegramUsername?: string; // Replaces instagramUsername
-  password?: string; // Added for local auth
+  telegramId?: string; 
+  telegramUsername?: string; 
+  password?: string; 
   name: string;
   role: UserRole;
   isAuthenticated: boolean;
@@ -66,6 +79,7 @@ export interface UserProgress {
   backgroundStyle?: string;
   
   notifications: NotificationSettings;
+  stats: UserStats; // New detailed stats
 }
 
 export interface AppIntegrations {
@@ -114,6 +128,8 @@ export enum Tab {
   CURATOR_DASHBOARD = 'CURATOR_DASHBOARD',
   ADMIN_DASHBOARD = 'ADMIN_DASHBOARD'
 }
+
+export type AdminTab = 'OVERVIEW' | 'COURSE' | 'USERS' | 'CALENDAR' | 'SETTINGS';
 
 export interface ArenaScenario {
   id: string;

@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { UserProgress, CalendarEvent, UserRole } from '../types';
-import { CalendarView } from './CalendarView';
+import React, { useState, useEffect } from 'react';
+import { UserProgress, CalendarEvent } from '../types';
 
 interface ProfileProps {
   userProgress: UserProgress;
@@ -9,11 +8,23 @@ interface ProfileProps {
   allUsers: UserProgress[];
   onUpdateUser: (updatedUser: Partial<UserProgress>) => void;
   events: CalendarEvent[];
+  onReferral: () => void;
+  onShareStory: () => void;
+  isSettingsOpen: boolean; // Controlled by SmartNav
 }
 
-type ViewMode = 'DASHBOARD' | 'SETTINGS' | 'LEADERBOARD';
+type ViewMode = 'DASHBOARD' | 'LEADERBOARD';
 
-export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUsers, onUpdateUser, events }) => {
+export const Profile: React.FC<ProfileProps> = ({ 
+    userProgress, 
+    onLogout, 
+    allUsers, 
+    onUpdateUser, 
+    events, 
+    onReferral, 
+    onShareStory,
+    isSettingsOpen 
+}) => {
   const [viewMode, setViewMode] = useState<ViewMode>('DASHBOARD');
   
   // Settings State
@@ -28,8 +39,9 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   // Calculated Stats
   const registrationDate = userProgress.registrationDate ? new Date(userProgress.registrationDate) : new Date();
   const daysInSystem = Math.floor((new Date().getTime() - registrationDate.getTime()) / (1000 * 3600 * 24)) + 1;
-  // Mock Win/Lose based on activity (just for visual matching)
   const winRate = Math.min(100, 50 + (userProgress.completedLessonIds.length * 5)); 
+  const circleCircumference = 2 * Math.PI * 22; // r=22
+  const strokeDashoffset = circleCircumference - (circleCircumference * winRate) / 100;
 
   const handleSaveSettings = () => {
     setIsSaving(true);
@@ -40,7 +52,6 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
             notifications: editNotifications
         });
         setIsSaving(false);
-        setViewMode('DASHBOARD');
     }, 800);
   };
 
@@ -48,78 +59,50 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
     setEditNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // --- SUB-COMPONENTS ---
-
-  const renderHeader = () => (
-    <div className="flex justify-between items-center px-4 py-2 mb-6">
-        <button 
-            onClick={onLogout} 
-            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
-        >
-            <span className="text-lg">✕</span>
-            <span className="text-sm font-medium">Close</span>
-        </button>
-
-        <div className="flex items-center gap-4">
-             {viewMode === 'DASHBOARD' && (
-                 <>
-                    <button onClick={() => setViewMode('SETTINGS')} className="text-white/80 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                            <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 00-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 00-2.282.819l-.922 1.597a1.875 1.875 0 00.432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 000 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 00-.432 2.385l.922 1.597a1.875 1.875 0 002.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 002.28-.819l.922-1.597a1.875 1.875 0 00-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 000-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 00-2.282-.818l-1.02.382c-.114.043-.282.031-.45-.083a7.49 7.49 0 00-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 00-1.85-1.567h-1.843zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clipRule="evenodd" />
-                        </svg>
-                    </button>
-                    <button className="text-white/80 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                            <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clipRule="evenodd" />
-                        </svg>
-                    </button>
-                 </>
-             )}
-             
-            <div className="bg-[#1F2128] border border-white/10 rounded-full px-3 py-1.5 flex items-center gap-2">
-                <span className="text-[#00B050] text-sm font-black">
-                    {userProgress.xp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <button className="w-5 h-5 bg-[#00CEFF] rounded-full flex items-center justify-center text-black font-bold text-xs hover:scale-110 transition-transform">+</button>
-            </div>
-        </div>
-    </div>
-  );
-
   const renderStatsRow = () => (
-      <div className="flex justify-between items-center px-6 mb-8">
-          {/* Win/Lose */}
-          <div className="flex flex-col items-center gap-2">
-              <div className="relative w-12 h-12 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="24" cy="24" r="22" stroke="#1F2128" strokeWidth="4" fill="none" />
-                      <circle cx="24" cy="24" r="22" stroke="#00CEFF" strokeWidth="4" fill="none" strokeDasharray={138} strokeDashoffset={138 - (138 * winRate / 100)} strokeLinecap="round" />
+      <div className="flex justify-between items-center px-6 mb-8 gap-3">
+          {/* Win/Lose Card */}
+          <div className="flex flex-col items-center gap-2 flex-1 animate-scale-in delay-100 p-2 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 cursor-pointer">
+              <div className="relative w-14 h-14 flex items-center justify-center group">
+                  <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_8px_rgba(0,206,255,0.3)]">
+                      <circle cx="28" cy="28" r="22" stroke="#1F2128" strokeWidth="4" fill="none" />
+                      <circle 
+                        cx="28" cy="28" r="22" 
+                        stroke="#00CEFF" strokeWidth="4" fill="none" 
+                        strokeDasharray={circleCircumference} 
+                        strokeDashoffset={strokeDashoffset} 
+                        strokeLinecap="round" 
+                        className="transition-all duration-1000 ease-out group-hover:drop-shadow-[0_0_10px_#00CEFF]"
+                      />
                   </svg>
-                  <span className="absolute text-[10px] font-bold text-[#00CEFF]">{winRate}%</span>
+                  <span className="absolute text-[10px] font-bold text-[#00CEFF] group-hover:scale-110 transition-transform">{winRate}%</span>
               </div>
-              <span className="text-white/40 text-[10px] font-bold">Win/Lose</span>
+              <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">Rate</span>
           </div>
 
-          {/* Level */}
-          <div className="flex flex-col items-center gap-2 transform -translate-y-4">
-               <div className="w-16 h-16 bg-[#1F2128] rounded-2xl flex items-center justify-center border border-white/5 relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                   <div className="absolute -top-2 -right-2 text-xl">✨</div>
-                   <div className="text-[#00CEFF] font-black text-2xl">{userProgress.level}</div>
+          {/* Level Card */}
+          <div className="flex flex-col items-center gap-2 transform -translate-y-4 flex-1 animate-scale-in delay-200">
+               <div className="w-16 h-16 bg-[#1F2128] rounded-2xl flex items-center justify-center border border-white/5 relative shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-110 hover:bg-[#252830] hover:border-[#00CEFF]/30 group cursor-pointer overflow-hidden">
+                   <div className="absolute -top-2 -right-2 text-xl animate-bounce z-10">✨</div>
+                   <div className="text-[#00CEFF] font-black text-2xl group-hover:scale-125 transition-transform duration-300 relative z-10">{userProgress.level}</div>
+                   
+                   {/* Shimmer Effect */}
+                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"></div>
+                   <div className="absolute inset-0 bg-[#00CEFF]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                </div>
-               <span className="text-white/40 text-[10px] font-bold">Level</span>
+               <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">Level</span>
           </div>
 
-          {/* Days */}
-          <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 bg-[#1F2128] rounded-xl flex items-center justify-center border border-white/5 text-white/80">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                  </svg>
+          {/* Days Card */}
+          <div className="flex flex-col items-center gap-2 flex-1 animate-scale-in delay-300 p-2 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 cursor-pointer group">
+              <div className="w-14 h-14 bg-[#1F2128] rounded-2xl flex items-center justify-center border border-white/5 text-white/80 transition-all duration-300 group-hover:bg-[#252830] group-hover:text-[#D4AF37] group-hover:border-[#D4AF37]/30 shadow-sm relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#D4AF37]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="flex flex-col items-center relative z-10">
+                      <span className="text-white font-bold text-lg leading-none mb-1 group-hover:text-[#D4AF37] transition-colors">{daysInSystem}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-white/40 group-hover:text-[#D4AF37] group-hover:animate-pulse"><path fillRule="evenodd" d="M12.963 2.286a.75.75 0 00-1.071-.136 9.742 9.742 0 00-3.539 6.177 7.547 7.547 0 01-1.705-1.715.75.75 0 00-1.152-.082A9 9 0 1015.68 4.534a7.46 7.46 0 01-2.717-2.248zM15.75 14.25a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" /></svg>
+                  </div>
               </div>
-              <div className="flex flex-col items-center">
-                  <span className="text-white font-bold text-sm leading-none">{daysInSystem}</span>
-                  <span className="text-white/40 text-[10px] font-bold">Days</span>
-              </div>
+              <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">Streak</span>
           </div>
       </div>
   );
@@ -127,17 +110,15 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   const renderCalendarStrip = () => {
       const today = new Date();
       const days = [];
-      // Generate 7 days centered on selection (or today)
       for (let i = -3; i <= 3; i++) {
           const d = new Date(selectedDate);
           d.setDate(selectedDate.getDate() + i);
           days.push(d);
       }
-
       const weekDays = ['Sun', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri', 'Sat'];
 
       return (
-          <div className="flex justify-between items-center px-4 mb-8">
+          <div className="flex justify-between items-center px-4 mb-8 animate-slide-up fill-mode-both delay-100">
               {days.map((date, i) => {
                   const isSelected = date.getDate() === selectedDate.getDate() && date.getMonth() === selectedDate.getMonth();
                   const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth();
@@ -146,17 +127,20 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
                       <button 
                         key={i} 
                         onClick={() => setSelectedDate(date)}
-                        className={`flex flex-col items-center gap-2 p-2 rounded-[1rem] transition-all min-w-[44px]
-                            ${isSelected ? 'bg-[#1F2128] border border-[#00CEFF]/50 shadow-[0_0_15px_rgba(0,206,255,0.1)] -translate-y-1' : 'hover:bg-white/5'}
+                        className={`flex flex-col items-center justify-center gap-1.5 w-[44px] h-[70px] rounded-[1.2rem] transition-all duration-300 relative
+                            ${isSelected 
+                                ? 'bg-[#1F2128] border border-[#00CEFF]/50 shadow-[0_0_15px_#00CEFF] -translate-y-2 scale-110 z-10' 
+                                : 'hover:bg-white/5 border border-transparent active:scale-95'}
                         `}
                       >
-                          <span className={`text-[9px] font-bold uppercase ${isSelected ? 'text-[#00CEFF]' : 'text-slate-500'}`}>
+                          {isSelected && <div className="absolute inset-0 bg-[#00CEFF]/5 rounded-[1.2rem] animate-pulse"></div>}
+                          <span className={`text-[9px] font-bold uppercase tracking-tight relative z-10 ${isSelected ? 'text-[#00CEFF]' : 'text-slate-500'}`}>
                               {weekDays[date.getDay()]}
                           </span>
-                          <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-400'} ${isToday && !isSelected ? 'text-[#00B050]' : ''}`}>
+                          <span className={`text-sm font-black relative z-10 ${isSelected ? 'text-white' : 'text-slate-400'} ${isToday && !isSelected ? 'text-[#00B050]' : ''}`}>
                               {date.getDate()}
                           </span>
-                          {isSelected && <div className="w-1 h-1 bg-[#00CEFF] rounded-full"></div>}
+                          {isSelected && <div className="w-1 h-1 bg-[#00CEFF] rounded-full shadow-[0_0_5px_#00CEFF] relative z-10"></div>}
                       </button>
                   );
               })}
@@ -167,87 +151,78 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   const renderDashboard = () => (
       <div className="animate-fade-in">
           {/* Avatar Section */}
-          <div className="flex flex-col items-center mb-8">
-              <div className="relative w-32 h-32 mb-3">
-                  <div className="absolute inset-0 bg-[#00CEFF] rounded-full blur-[50px] opacity-20"></div>
-                  <div className="w-full h-full rounded-full border-4 border-[#1F2128] overflow-hidden relative bg-[#131419] shadow-2xl">
+          <div className="flex flex-col items-center mb-8 animate-slide-up pt-8">
+              <div className="relative w-32 h-32 mb-3 group cursor-pointer">
+                  <div className="absolute -inset-4 rounded-full border border-dashed border-[#00CEFF]/20 animate-[spin_10s_linear_infinite]"></div>
+                  <div className="absolute inset-0 bg-[#00CEFF] rounded-full blur-[50px] opacity-20 group-hover:opacity-40 transition-opacity duration-500 animate-pulse-slow"></div>
+                  <div className="w-full h-full rounded-full border-4 border-[#1F2128] overflow-hidden relative bg-[#131419] shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:rotate-2 group-hover:border-[#00CEFF]/50">
                       <img 
                           src={userProgress.avatarUrl || `https://ui-avatars.com/api/?name=${userProgress.name}`} 
-                          className="w-full h-full object-cover transform scale-110"
+                          className="w-full h-full object-cover transform scale-110 group-hover:scale-100 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                   </div>
-                  {/* Status Indicator */}
-                  <div className="absolute bottom-2 right-2 w-6 h-6 bg-[#1F2128] rounded-full flex items-center justify-center">
-                      <div className="w-4 h-4 bg-[#00B050] rounded-full border-2 border-[#1F2128]"></div>
+                  <div className="absolute bottom-2 right-2 w-7 h-7 bg-[#1F2128] rounded-full flex items-center justify-center z-10 group-hover:scale-110 transition-transform">
+                      <div className="w-4 h-4 bg-[#00B050] rounded-full border-2 border-[#1F2128] animate-pulse shadow-[0_0_8px_#00B050]"></div>
                   </div>
               </div>
-              <h2 className="text-2xl font-black text-white tracking-tight">{userProgress.name}</h2>
-              <p className="text-slate-500 text-xs font-bold">@{userProgress.telegramUsername || 'recruit'}</p>
+              <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                  {userProgress.name}
+                  {userProgress.role === 'ADMIN' && <span className="text-[#00CEFF] text-sm">🛡️</span>}
+              </h2>
+              <p className="text-slate-500 text-xs font-bold tracking-widest uppercase">@{userProgress.telegramUsername || 'recruit'}</p>
           </div>
 
           {renderStatsRow()}
           {renderCalendarStrip()}
 
+          {/* Quick Actions */}
+          <div className="px-4 mb-4 grid grid-cols-2 gap-4">
+              <button onClick={onReferral} className="bg-[#6C5DD3]/10 p-3 rounded-2xl border border-[#6C5DD3]/30 flex items-center gap-3 active:scale-95 transition-transform hover:bg-[#6C5DD3]/20 hover:border-[#6C5DD3]/50 group">
+                  <div className="w-10 h-10 rounded-full bg-[#6C5DD3]/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">🤝</div>
+                  <div className="text-left">
+                      <div className="text-white font-bold text-xs group-hover:text-[#6C5DD3] transition-colors">Приведи друга</div>
+                      <div className="text-[#6C5DD3] font-black text-[9px]">+10,000 XP</div>
+                  </div>
+              </button>
+              <button onClick={onShareStory} className="bg-[#D4AF37]/10 p-3 rounded-2xl border border-[#D4AF37]/30 flex items-center gap-3 active:scale-95 transition-transform hover:bg-[#D4AF37]/20 hover:border-[#D4AF37]/50 group">
+                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">📸</div>
+                  <div className="text-left">
+                      <div className="text-white font-bold text-xs group-hover:text-[#D4AF37] transition-colors">Репост сторис</div>
+                      <div className="text-[#D4AF37] font-black text-[9px]">+400 XP</div>
+                  </div>
+              </button>
+          </div>
+
           {/* Widgets Grid */}
-          <div className="grid grid-cols-2 gap-4 px-4 pb-24">
-              {/* Friends / Leaderboard Widget */}
-              <button onClick={() => setViewMode('LEADERBOARD')} className="bg-[#1F2128] p-4 rounded-[2rem] border border-white/5 flex flex-col items-start gap-4 hover:border-white/20 transition-all group relative overflow-hidden">
-                  <div className="flex -space-x-3 relative z-10">
+          <div className="grid grid-cols-2 gap-4 px-4 pb-32 animate-slide-up delay-200 fill-mode-both">
+              <button onClick={() => setViewMode('LEADERBOARD')} className="bg-[#1F2128] p-5 rounded-[2rem] border border-white/5 flex flex-col items-start gap-4 hover:border-white/20 transition-all duration-300 group relative overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 active:scale-[0.98]">
+                  <div className="flex -space-x-3 relative z-10 transition-all duration-300 group-hover:space-x-[-8px]">
                       {allUsers.slice(0, 3).map((u, i) => (
-                          <div key={i} className="w-10 h-10 rounded-full border-2 border-[#1F2128] overflow-hidden bg-slate-800">
+                          <div key={i} className="w-10 h-10 rounded-full border-2 border-[#1F2128] overflow-hidden bg-slate-800 transition-transform hover:scale-110 hover:z-20">
                                <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}`} className="w-full h-full object-cover" />
                           </div>
                       ))}
-                      {allUsers.length > 3 && (
-                        <div className="w-10 h-10 rounded-full border-2 border-[#1F2128] bg-[#2A2D35] text-white flex items-center justify-center text-[10px] font-bold">
-                            +{allUsers.length - 3}
-                        </div>
-                      )}
                   </div>
                   <div className="relative z-10 text-left">
-                      <h3 className="text-white font-bold text-lg leading-none">Friends</h3>
-                      <p className="text-[#00CEFF] text-[10px] font-bold">{Math.max(1, Math.floor(allUsers.length / 2))} online</p>
+                      <h3 className="text-white font-bold text-lg leading-none mb-1">Friends</h3>
+                      <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-[#00CEFF] rounded-full animate-pulse"></span>
+                          <p className="text-[#00CEFF] text-[10px] font-bold">{Math.max(1, Math.floor(allUsers.length / 2))} online</p>
+                      </div>
                   </div>
-                  {/* Decor */}
-                  <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-[#00CEFF]/10 rounded-full blur-xl group-hover:bg-[#00CEFF]/20 transition-colors"></div>
               </button>
 
-              {/* Keep it up / Streak Widget */}
-              <div className="bg-[#1F2128] p-4 rounded-[2rem] border border-white/5 flex flex-col items-start justify-between relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity transform group-hover:scale-110 duration-500">
+              <div className="bg-[#1F2128] p-5 rounded-[2rem] border border-white/5 flex flex-col items-start justify-between relative overflow-hidden group hover:border-white/20 hover:-translate-y-1 transition-all duration-300">
+                  <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-all transform group-hover:scale-110 group-hover:rotate-12 duration-500 text-[#00B050] drop-shadow-[0_0_10px_rgba(0,176,80,0.5)]">
                       <span className="text-5xl">🏆</span>
                   </div>
                   <div className="relative z-10">
                       <h3 className="text-white font-bold text-lg mb-1">Keep it up!</h3>
                       <p className="text-slate-400 text-[10px] font-medium leading-tight">
-                          <span className="text-[#00B050] font-bold">{daysInSystem} days</span> in a row you are here!
+                          <span className="text-[#00B050] font-bold">{daysInSystem} days</span> streak
                       </p>
                   </div>
-                  <div className="flex gap-1 mt-3">
-                       {[1,2,3,4].map(i => <div key={i} className={`w-2 h-2 rounded-full ${i <= 3 ? 'bg-[#00CEFF]' : 'bg-slate-700'}`}></div>)}
-                       <div className="w-2 h-2 rounded-full bg-[#00B050] animate-pulse"></div>
-                  </div>
-              </div>
-
-              {/* Complete New Tasks Widget (Wide) */}
-              <div className="col-span-2 bg-gradient-to-r from-[#1F2128] to-[#16181D] p-5 rounded-[2.5rem] border border-white/5 flex items-center justify-between relative overflow-hidden group hover:border-[#00CEFF]/30 transition-all cursor-pointer">
-                  <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#00CEFF]"></div>
-                  <div className="flex items-center gap-4 relative z-10 pl-2">
-                       <div className="w-12 h-12 bg-[#00CEFF]/10 rounded-full flex items-center justify-center text-[#00CEFF] text-2xl group-hover:scale-110 transition-transform">
-                           ⚡
-                       </div>
-                       <div>
-                           <h3 className="text-white font-bold text-lg">Complete new tasks</h3>
-                           <p className="text-slate-500 text-xs">Get a bonus on your winnings</p>
-                       </div>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white group-hover:bg-[#00CEFF] group-hover:text-black transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-                  </div>
-                  
-                  {/* Background Glow */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-32 bg-[#00CEFF] rounded-full blur-[80px] opacity-10 group-hover:opacity-20 transition-opacity"></div>
               </div>
           </div>
       </div>
@@ -256,15 +231,15 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   const renderLeaderboard = () => {
       const sortedUsers = [...allUsers].sort((a, b) => b.xp - a.xp);
       return (
-          <div className="px-6 animate-slide-in pb-24">
+          <div className="px-6 animate-slide-in pb-32 pt-12">
                <div className="flex items-center gap-4 mb-6">
-                   <button onClick={() => setViewMode('DASHBOARD')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10">←</button>
+                   <button onClick={() => setViewMode('DASHBOARD')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all">←</button>
                    <h2 className="text-2xl font-black text-white">Leaderboard</h2>
                </div>
 
                <div className="space-y-3">
                    {sortedUsers.map((u, i) => (
-                       <div key={i} className={`p-4 rounded-2xl flex items-center gap-4 border ${u.name === userProgress.name ? 'bg-[#00CEFF]/10 border-[#00CEFF]/50' : 'bg-[#1F2128] border-white/5'}`}>
+                       <div key={i} className={`p-4 rounded-2xl flex items-center gap-4 border transition-all hover:scale-[1.02] ${u.name === userProgress.name ? 'bg-[#00CEFF]/10 border-[#00CEFF]/50 shadow-[0_0_15px_rgba(0,206,255,0.1)]' : 'bg-[#1F2128] border-white/5'}`}>
                            <span className={`font-black text-lg w-6 ${i < 3 ? 'text-[#D4AF37]' : 'text-slate-500'}`}>{i + 1}</span>
                            <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}`} className="w-10 h-10 rounded-full object-cover bg-slate-700" />
                            <div className="flex-1">
@@ -283,38 +258,34 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
   };
 
   const renderSettings = () => (
-      <div className="px-6 animate-slide-in pb-24">
-          <div className="flex items-center gap-4 mb-8">
-               <button onClick={() => setViewMode('DASHBOARD')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10">←</button>
-               <h2 className="text-2xl font-black text-white">Settings</h2>
-          </div>
-
+      <div className="px-6 animate-slide-in pb-32 pt-12">
+          <h2 className="text-2xl font-black text-white mb-8">Settings</h2>
           <div className="space-y-6">
-              <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5">
+              <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 shadow-lg">
                   <h3 className="text-white font-bold mb-4">Profile Info</h3>
                   <div className="space-y-4">
                       <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase">Callsign</label>
-                          <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 focus:border-[#00CEFF] outline-none font-bold" />
+                          <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 focus:border-[#00CEFF] outline-none font-bold transition-colors" />
                       </div>
                       <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase">Telegram</label>
-                          <input value={editTelegram} onChange={e => setEditTelegram(e.target.value)} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 focus:border-[#00CEFF] outline-none font-bold" />
+                          <input value={editTelegram} onChange={e => setEditTelegram(e.target.value)} className="w-full bg-black/20 text-white p-4 rounded-xl border border-white/10 focus:border-[#00CEFF] outline-none font-bold transition-colors" />
                       </div>
                   </div>
               </div>
 
-              <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5">
+              <div className="bg-[#1F2128] p-6 rounded-[2rem] border border-white/5 shadow-lg">
                   <h3 className="text-white font-bold mb-4">Notifications</h3>
                   <div className="space-y-4">
                       {Object.entries(editNotifications).map(([key, val]) => (
-                          <div key={key} className="flex items-center justify-between p-2">
+                          <div key={key} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-xl transition-colors">
                               <span className="text-slate-300 text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                               <button 
                                 onClick={() => toggleNotification(key as keyof typeof editNotifications)}
-                                className={`w-12 h-6 rounded-full p-1 transition-colors ${val ? 'bg-[#00CEFF]' : 'bg-slate-700'}`}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${val ? 'bg-[#00CEFF]' : 'bg-slate-700'}`}
                               >
-                                  <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${val ? 'translate-x-6' : 'translate-x-0'}`} />
+                                  <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${val ? 'translate-x-6' : 'translate-x-0'}`} />
                               </button>
                           </div>
                       ))}
@@ -324,7 +295,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
               <button 
                 onClick={handleSaveSettings}
                 disabled={isSaving}
-                className="w-full py-4 bg-[#00CEFF] text-black rounded-[1.5rem] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-[0_0_30px_rgba(0,206,255,0.3)]"
+                className="w-full py-4 bg-[#00CEFF] text-black rounded-[1.5rem] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(0,206,255,0.3)] disabled:opacity-50"
               >
                   {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -334,11 +305,12 @@ export const Profile: React.FC<ProfileProps> = ({ userProgress, onLogout, allUse
 
   return (
     <div className="min-h-screen bg-[#0F1115] pb-24 font-sans text-white overflow-x-hidden">
-        {renderHeader()}
-        
-        {viewMode === 'DASHBOARD' && renderDashboard()}
-        {viewMode === 'SETTINGS' && renderSettings()}
-        {viewMode === 'LEADERBOARD' && renderLeaderboard()}
+        {isSettingsOpen ? renderSettings() : (
+            <>
+                {viewMode === 'DASHBOARD' && renderDashboard()}
+                {viewMode === 'LEADERBOARD' && renderLeaderboard()}
+            </>
+        )}
     </div>
   );
 };

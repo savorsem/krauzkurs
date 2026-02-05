@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Tab, UserProgress, Lesson, UserRole, ChatMessage, AppConfig, Module, CalendarEvent } from './types';
+import { Tab, UserProgress, Lesson, AppConfig, Module, CalendarEvent, AdminTab } from './types';
 import { COURSE_MODULES, MOCK_EVENTS } from './constants';
 import { ModuleList } from './components/ModuleList';
 import { ChatAssistant } from './components/ChatAssistant';
@@ -37,10 +37,12 @@ const DEFAULT_CONFIG: AppConfig = {
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.MODULES);
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('OVERVIEW');
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [avatarRegenerating, setAvatarRegenerating] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Load state from local storage or use defaults
   const [appConfig, setAppConfig] = useState<AppConfig>(() => Storage.get<AppConfig>('appConfig', DEFAULT_CONFIG));
@@ -63,6 +65,14 @@ const App: React.FC = () => {
         telegramSync: false,
         deadlineReminders: true,
         chatNotifications: true
+      },
+      stats: {
+          referrals: 0,
+          storyReposts: 0,
+          questionsAsked: {},
+          notebookEntries: { habits: 0, goals: 0, gratitude: 0 },
+          suggestionsMade: 0,
+          webinarsAttended: 0
       }
     });
   });
@@ -92,32 +102,38 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (data: any) => {
-    // Check if it's an existing user login or a new registration
     const existingUser = allUsers.find(u => u.telegramUsername === data.telegramUsername);
-    
     let newUserState: UserProgress;
 
+    const defaultStats = {
+        referrals: 0,
+        storyReposts: 0,
+        questionsAsked: {},
+        notebookEntries: { habits: 0, goals: 0, gratitude: 0 },
+        suggestionsMade: 0,
+        webinarsAttended: 0
+    };
+
     if (existingUser && !data.isRegistration) {
-        // Login: Merge existing data
         newUserState = {
             ...existingUser,
             isAuthenticated: true,
-            // Update fields if they changed (though usually they don't on login)
+            stats: existingUser.stats || defaultStats
         };
     } else {
-        // Registration or First Time Admin
         newUserState = {
             ...userProgress,
             isAuthenticated: true,
             role: data.role,
             name: data.name,
             telegramUsername: data.telegramUsername,
-            password: data.password, // Store password
+            password: data.password, 
             originalPhotoBase64: data.originalPhoto,
             avatarUrl: data.avatarUrl,
             armorStyle: data.armorStyle,
             backgroundStyle: data.backgroundStyle,
-            registrationDate: new Date().toISOString()
+            registrationDate: new Date().toISOString(),
+            stats: defaultStats
         };
     }
     
@@ -150,21 +166,22 @@ const App: React.FC = () => {
       });
   };
 
-  const handleLessonComplete = (lessonId: string) => {
+  const handleLessonComplete = (lessonId: string, bonusXp: number = 0) => {
     if (userProgress.completedLessonIds.includes(lessonId)) return;
     const lesson = modules.flatMap(m => m.lessons).find(l => l.id === lessonId);
     if (lesson) {
-      const newXp = userProgress.xp + lesson.xpReward;
-      const newLevel = Math.max(userProgress.level, Math.floor(newXp / 100) + 1);
+      const baseXp = lesson.xpReward; 
+      const totalXp = userProgress.xp + baseXp + bonusXp + 5; 
+      const newLevel = Math.max(userProgress.level, Math.floor(totalXp / 100) + 1);
       
       const updates: Partial<UserProgress> = {
-          xp: newXp,
+          xp: totalXp,
           level: newLevel,
           completedLessonIds: [...userProgress.completedLessonIds, lessonId]
       };
 
       handleUpdateUser(updates);
-      addToast('success', `Урок пройден! +${lesson.xpReward} XP`);
+      addToast('success', `Урок пройден! +${baseXp + bonusXp + 5} XP`);
 
       if (newLevel > userProgress.level) {
          addToast('info', `ПОВЫШЕНИЕ! Теперь ты Уровень ${newLevel}`);
@@ -186,20 +203,77 @@ const App: React.FC = () => {
      setAvatarRegenerating(false);
   };
 
+  const handleNotebookAction = (type: 'HABIT' | 'GOAL' | 'GRATITUDE' | 'SUGGESTION') => {
+      let xpAward = 0;
+      const stats = { ...userProgress.stats };
+      
+      if (type === 'HABIT') { xpAward = 5; stats.notebookEntries.habits++; }
+      if (type === 'GOAL') { xpAward = 10; stats.notebookEntries.goals++; }
+      if (type === 'GRATITUDE') { xpAward = 10; stats.notebookEntries.gratitude++; }
+      if (type === 'SUGGESTION') { xpAward = 50; stats.suggestionsMade++; }
+
+      const newXp = userProgress.xp + xpAward;
+      handleUpdateUser({ xp: newXp, stats });
+      addToast('success', `Запись в блокнот: +${xpAward} XP`);
+  };
+
+  const handleReferral = () => {
+      const xpAward = 10000;
+      const newXp = userProgress.xp + xpAward;
+      const stats = { ...userProgress.stats, referrals: userProgress.stats.referrals + 1 };
+      handleUpdateUser({ xp: newXp, stats });
+      addToast('success', `Боец завербован! +${xpAward} XP`);
+  };
+
+  const handleShareStory = () => {
+      if (userProgress.stats.storyReposts >= 5) {
+          addToast('error', 'Лимит наград за репосты (5) исчерпан.');
+          return;
+      }
+      const xpAward = 400;
+      const newXp = userProgress.xp + xpAward;
+      const stats = { ...userProgress.stats, storyReposts: userProgress.stats.storyReposts + 1 };
+      handleUpdateUser({ xp: newXp, stats });
+      addToast('success', `Репост учтен! +${xpAward} XP`);
+  };
+
+  const handleAskQuestion = (question: string) => {
+      if(!selectedLesson) return;
+      const lessonId = selectedLesson.id;
+      const currentCount = userProgress.stats.questionsAsked[lessonId] || 0;
+      
+      if (currentCount >= 5) {
+           addToast('error', 'Лимит вопросов к этому уроку (5) исчерпан.');
+           return;
+      }
+
+      const xpAward = 10;
+      const newXp = userProgress.xp + xpAward;
+      const stats = { 
+          ...userProgress.stats, 
+          questionsAsked: { ...userProgress.stats.questionsAsked, [lessonId]: currentCount + 1 } 
+      };
+      
+      handleUpdateUser({ xp: newXp, stats });
+      addToast('success', `Вопрос задан! +${xpAward} XP`);
+  };
+
+  const handleGlobalAskQuestion = () => {
+      alert("Нажмите кнопку '?' внутри урока, чтобы отправить вопрос.");
+  };
+
   if (!userProgress.isAuthenticated) return <Auth onLogin={handleLogin} existingUsers={allUsers} />;
 
   const currentParentModule = selectedLesson ? modules.find(m => m.lessons.some(l => l.id === selectedLesson.id)) : undefined;
 
   return (
-    <div className="min-h-screen w-full relative">
-       {/* Toast Container */}
+    <div className="min-h-screen w-full relative bg-[#0F1115]">
        <div className="toast-container">
            {toasts.map(toast => (
                <Toast key={toast.id} toast={toast} onRemove={removeToast} />
            ))}
        </div>
 
-       {/* Loading Indicators */}
        {(isSyncing || avatarRegenerating) && (
           <div className="fixed top-4 right-4 z-[100] animate-fade-in pointer-events-none" style={{ paddingTop: 'var(--safe-area-top)' }}>
              <div className="glass px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
@@ -209,9 +283,16 @@ const App: React.FC = () => {
           </div>
        )}
 
-      <main className="relative z-10 max-w-lg mx-auto md:max-w-2xl bg-[#F9FAFB] min-h-screen shadow-2xl overflow-hidden">
+      <main className="relative z-10 max-w-lg mx-auto md:max-w-2xl min-h-screen shadow-2xl overflow-hidden bg-[#0F1115]">
         {selectedLesson ? (
-          <LessonView lesson={selectedLesson} isCompleted={userProgress.completedLessonIds.includes(selectedLesson.id)} onComplete={handleLessonComplete} onBack={() => setSelectedLesson(null)} parentModule={currentParentModule} />
+          <LessonView 
+            lesson={selectedLesson} 
+            isCompleted={userProgress.completedLessonIds.includes(selectedLesson.id)} 
+            onComplete={handleLessonComplete} 
+            onBack={() => setSelectedLesson(null)} 
+            parentModule={currentParentModule}
+            onAskQuestion={handleAskQuestion}
+          />
         ) : (
           <>
             {activeTab === Tab.MODULES && (
@@ -220,10 +301,22 @@ const App: React.FC = () => {
                     userProgress={userProgress} 
                     onSelectLesson={setSelectedLesson} 
                     onProfileClick={() => setActiveTab(Tab.PROFILE)}
+                    onNotebookAction={handleNotebookAction}
                 />
             )}
             {activeTab === Tab.CHAT && <ChatAssistant history={userProgress.chatHistory} onUpdateHistory={(h) => handleUpdateUser({chatHistory: h})} systemInstruction={appConfig.systemInstruction} />}
-            {activeTab === Tab.PROFILE && <Profile userProgress={userProgress} onLogout={handleLogout} allUsers={allUsers} onUpdateUser={handleUpdateUser} events={events} />}
+            {activeTab === Tab.PROFILE && (
+                <Profile 
+                    userProgress={userProgress} 
+                    onLogout={handleLogout} 
+                    allUsers={allUsers} 
+                    onUpdateUser={handleUpdateUser} 
+                    events={events}
+                    onReferral={handleReferral}
+                    onShareStory={handleShareStory}
+                    isSettingsOpen={isSettingsOpen}
+                />
+            )}
             {activeTab === Tab.CURATOR_DASHBOARD && userProgress.role === 'CURATOR' && <CuratorDashboard />}
             {activeTab === Tab.ADMIN_DASHBOARD && userProgress.role === 'ADMIN' && (
                 <AdminDashboard 
@@ -235,13 +328,26 @@ const App: React.FC = () => {
                     onUpdateUsers={setAllUsers} 
                     onUpdateEvents={setEvents}
                     addToast={addToast}
+                    activeTab={activeAdminTab}
                 />
             )}
           </>
         )}
       </main>
       
-      <SmartNav activeTab={activeTab} setActiveTab={(t) => { setActiveTab(t); telegram.haptic('selection'); }} role={userProgress.role} selectedLesson={selectedLesson} onExitLesson={() => setSelectedLesson(null)} />
+      <SmartNav 
+        activeTab={activeTab} 
+        setActiveTab={(t) => { setActiveTab(t); setIsSettingsOpen(false); telegram.haptic('selection'); }} 
+        role={userProgress.role} 
+        selectedLesson={selectedLesson} 
+        onExitLesson={() => setSelectedLesson(null)} 
+        onAskQuestion={handleGlobalAskQuestion}
+        onLogout={handleLogout}
+        onToggleSettings={() => setIsSettingsOpen(!isSettingsOpen)}
+        isSettingsOpen={isSettingsOpen}
+        activeAdminTab={activeAdminTab}
+        setActiveAdminTab={setActiveAdminTab}
+      />
     </div>
   );
 };
