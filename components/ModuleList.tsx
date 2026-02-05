@@ -55,18 +55,18 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
         </h1>
 
         {/* Categories Scroller */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6 animate-slide-in delay-100">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-8 -mx-6 px-6 animate-slide-in delay-100">
             {categories.map((cat) => (
                 <button 
                     key={cat.id} 
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase transition-all whitespace-nowrap active:scale-95 border
+                    className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase transition-all duration-300 whitespace-nowrap active:scale-95 border
                     ${activeCategory === cat.id 
-                        ? 'bg-[#D4AF37] text-black border-[#D4AF37] shadow-lg shadow-[#D4AF37]/20' 
-                        : 'bg-white/5 text-slate-400 border-white/5 hover:border-white/20'
+                        ? 'bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)] ring-2 ring-white/10 scale-105 z-10' 
+                        : 'bg-white/5 text-slate-400 border-white/5 hover:border-white/20 hover:bg-white/10'
                     }`}
                 >
-                    <span className="opacity-80">{cat.icon}</span>
+                    <span className={`text-lg transition-transform duration-300 ${activeCategory === cat.id ? 'scale-110' : ''}`}>{cat.icon}</span>
                     <span>{cat.label}</span>
                 </button>
             ))}
