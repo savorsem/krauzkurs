@@ -10,6 +10,7 @@ export interface Lesson {
   homeworkType: HomeworkType;
   homeworkTask: string;
   aiGradingInstruction: string;
+  deadline?: string; 
 }
 
 export type ModuleCategory = 'SALES' | 'PSYCHOLOGY' | 'TACTICS' | 'GENERAL' | 'NOTEBOOK';
@@ -24,6 +25,7 @@ export interface Module {
   imageUrl: string;
   videoUrl?: string;
   pdfUrl?: string;
+  prerequisites: string[]; 
 }
 
 export type UserRole = 'STUDENT' | 'CURATOR' | 'ADMIN';
@@ -43,16 +45,23 @@ export interface NotificationSettings {
 }
 
 export interface UserStats {
-  referrals: number; // 10,000 XP
-  storyReposts: number; // Max 5, 400 XP each
-  questionsAsked: Record<string, number>; // LessonID -> count, max 5 per lesson
+  referrals: number; 
+  storyReposts: number; 
+  questionsAsked: Record<string, number>; 
   notebookEntries: {
-    habits: number; // 5 XP
-    goals: number; // 10 XP
-    gratitude: number; // 10 XP
+    habits: number; 
+    goals: number; 
+    gratitude: number; 
   };
-  suggestionsMade: number; // 50 XP
-  webinarsAttended: number; // 100 XP
+  suggestionsMade: number; 
+  webinarsAttended: number;
+  // Added for Radar Chart
+  skills: {
+    sales: number;
+    tactics: number;
+    psychology: number;
+    discipline: number;
+  };
 }
 
 export interface UserProgress {
@@ -68,33 +77,30 @@ export interface UserProgress {
   xp: number;
   level: number;
   completedLessonIds: string[];
+  completedModuleIds: string[]; 
   submittedHomeworks: string[];
   
   chatHistory: ChatMessage[];
   originalPhotoBase64?: string;
   avatarUrl?: string;
-  
-  // Customization preferences
   armorStyle?: string;
   backgroundStyle?: string;
   
   notifications: NotificationSettings;
-  stats: UserStats; // New detailed stats
+  stats: UserStats;
 }
 
-export interface AppIntegrations {
-  telegramBotToken?: string;
-  googleDriveFolderId?: string;
-  crmWebhookUrl?: string;
-  aiModelVersion?: string;
+export interface ThemeConfig {
+    cardStyle: 'GLASS' | 'SOLID' | 'NEON';
+    borderRadius: 'ROUNDED' | 'SHARP'; // Rounded = 2rem, Sharp = 0.5rem
+    accentColor: string;
 }
 
-export interface AppFeatures {
-  enableRealTimeSync: boolean;
-  autoApproveHomework: boolean;
-  maintenanceMode: boolean;
-  allowStudentChat: boolean;
-  publicLeaderboard: boolean;
+export interface DatabaseConfig {
+    syncEnabled: boolean;
+    lastBackup: string | null;
+    crmWebhook: string;
+    autoBackupInterval: 'HOURLY' | 'DAILY' | 'WEEKLY';
 }
 
 export interface AppConfig {
@@ -102,8 +108,21 @@ export interface AppConfig {
   appDescription: string;
   primaryColor: string;
   systemInstruction: string;
-  integrations: AppIntegrations;
-  features: AppFeatures;
+  theme: ThemeConfig; // Added Theme Control
+  database: DatabaseConfig; // Added DB Control
+  integrations: {
+    telegramBotToken?: string;
+    googleDriveFolderId?: string;
+    aiModelVersion?: string;
+    aiTemperature: number; // Added
+  };
+  features: {
+    enableRealTimeSync: boolean;
+    autoApproveHomework: boolean;
+    maintenanceMode: boolean;
+    allowStudentChat: boolean;
+    publicLeaderboard: boolean;
+  };
 }
 
 export enum EventType {
@@ -119,6 +138,7 @@ export interface CalendarEvent {
   date: Date | string;
   type: EventType;
   durationMinutes?: number;
+  lessonId?: string;
 }
 
 export enum Tab {
@@ -130,13 +150,13 @@ export enum Tab {
   ADMIN_DASHBOARD = 'ADMIN_DASHBOARD'
 }
 
-export type AdminTab = 'OVERVIEW' | 'COURSE' | 'USERS' | 'CALENDAR' | 'SETTINGS';
+export type AdminTab = 'OVERVIEW' | 'COURSE' | 'USERS' | 'CALENDAR' | 'SETTINGS' | 'DESIGN' | 'DATABASE';
 
 export interface ArenaScenario {
-  id: string;
-  title: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  clientRole: string;
-  objective: string;
-  initialMessage: string;
+    id: string;
+    title: string;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
+    clientRole: string;
+    objective: string;
+    initialMessage: string;
 }

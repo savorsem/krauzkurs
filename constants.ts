@@ -8,9 +8,10 @@ export const COURSE_MODULES: Module[] = [
     description: 'Философия элиты. Здесь слабые отсеются, а сильные начнут путь.',
     minLevel: 1,
     category: 'GENERAL',
-    imageUrl: 'https://picsum.photos/id/1/400/200',
-    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Sample Video
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Sample PDF
+    imageUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=400',
+    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    prerequisites: [],
     lessons: [
       {
         id: 'l1-1',
@@ -41,9 +42,10 @@ export const COURSE_MODULES: Module[] = [
     description: 'Психология противника и стратегия боя (Воронка).',
     minLevel: 2,
     category: 'TACTICS',
-    imageUrl: 'https://picsum.photos/id/20/400/200',
+    imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=400',
     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     pdfUrl: '#',
+    prerequisites: ['m1'],
     lessons: [
       {
         id: 'l2-1',
@@ -69,7 +71,6 @@ export const COURSE_MODULES: Module[] = [
   }
 ];
 
-// Helper to create dates relative to today
 const today = new Date();
 const addDays = (days: number) => {
   const date = new Date(today);

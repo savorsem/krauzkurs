@@ -10,7 +10,7 @@ interface AuthProps {
   existingUsers?: UserProgress[];
 }
 
-type AuthStep = 'AUTH_FORM' | 'IDENTITY' | 'SCANNING' | 'CUSTOMIZATION' | 'FINALIZING';
+type AuthStep = 'AUTH_FORM' | 'IDENTITY' | 'SCANNING' | 'DB_SYNC' | 'CUSTOMIZATION' | 'FINALIZING';
 
 const ARMOR_STYLES = [
   { id: 'Classic Bronze', label: 'Легионер', icon: '🏺', desc: 'Стандартная пехотная броня.' }, 
@@ -36,6 +36,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isShake, setIsShake] = useState(false);
   const [loadingText, setLoadingText] = useState('');
+  const [syncProgress, setSyncProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill username if available from Telegram
@@ -66,7 +67,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
     if (!cleanPassword) { handleError('password', 'Требуется код доступа'); return; }
 
     // 1. ADMIN CHECK (Hardcoded)
-    if (cleanUsername === 'admin' && cleanPassword === '55555sa5') {
+    if (cleanUsername === 'admin' && cleanPassword === 'admin') {
         telegram.haptic('success');
         onLogin({
             role: 'ADMIN',
@@ -107,9 +108,33 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
             return;
         }
 
-        telegram.haptic('success');
-        onLogin({ ...user, isRegistration: false });
+        // Simulate Login Sync
+        setStep('DB_SYNC');
+        startDbSync(() => {
+            telegram.haptic('success');
+            onLogin({ ...user, isRegistration: false });
+        });
     }
+  };
+
+  const startDbSync = (onComplete: () => void) => {
+      setSyncProgress(0);
+      let progress = 0;
+      const interval = setInterval(() => {
+          progress += Math.floor(Math.random() * 15) + 5;
+          if (progress > 100) progress = 100;
+          setSyncProgress(progress);
+          
+          if (progress < 30) setLoadingText('INITIALIZING UPLINK...');
+          else if (progress < 60) setLoadingText('SYNCING NEURAL DATABASE...');
+          else if (progress < 90) setLoadingText('DECRYPTING USER PROFILE...');
+          else setLoadingText('ACCESS GRANTED');
+
+          if (progress >= 100) {
+              clearInterval(interval);
+              setTimeout(onComplete, 500);
+          }
+      }, 200);
   };
 
   const handleIdentitySubmit = () => {
@@ -143,7 +168,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   const handleFinalize = async () => {
     setStep('FINALIZING');
     telegram.haptic('heavy');
-    const loadingMessages = ['КОВКА БРОНИ...', 'СИНХРОНИЗАЦИЯ НЕЙРОСЕТИ...', 'УСТАНОВКА СВЯЗИ СО ШТАБОМ...'];
+    const loadingMessages = ['КОВКА БРОНИ...', 'СИНХРОНИЗАЦИЯ НЕЙРОСЕТИ...', 'СОЗДАНИЕ ЛИЧНОГО ДЕЛА...', 'УСТАНОВКА СВЯЗИ СО ШТАБОМ...'];
     
     let msgIdx = 0;
     const interval = setInterval(() => {
@@ -182,48 +207,41 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
     <div className={`space-y-8 w-full animate-fade-in ${isShake ? 'animate-shake' : ''}`}>
        {/* Brand Header */}
        <div className="text-center relative pt-4">
-           {/* Purple/Blue circle backdrop */}
            <div className="relative mx-auto w-32 h-32 flex items-center justify-center">
-               <div className="absolute inset-0 bg-gradient-to-b from-[#4A3D8D] to-[#2D2A4A] rounded-full opacity-60"></div>
-               {/* Shield Icon Replacement */}
-               <div className="relative z-10 w-16 h-16 bg-[#131419] border border-white/10 rounded-xl flex items-center justify-center shadow-2xl">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 2L5 8.5V17.5C5 25.1 11.4 33.2 20 38C28.6 33.2 35 25.1 35 17.5V8.5L20 2Z" fill="#2A2D35" stroke="white" strokeWidth="1.5"/>
-                        <path d="M20 10L12 14V18C12 23 15.5 28.5 20 32C24.5 28.5 28 23 28 18V14L20 10Z" fill="#FF4B4B"/>
-                        <path d="M20 10L28 14V18C28 23 24.5 28.5 20 32V10Z" fill="#F9FAFB" opacity="0.8"/>
-                    </svg>
+               <div className="absolute inset-0 bg-gradient-to-b from-[#4A3D8D] to-[#2D2A4A] rounded-full opacity-60 animate-pulse-slow"></div>
+               <div className="relative z-10 w-20 h-20 bg-[#131419] border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-md">
+                    <span className="text-4xl">⚔️</span>
                </div>
                
-               {/* Krauz Academy Overlap Text */}
-               <div className="absolute -right-16 top-1/2 -translate-y-1/2 whitespace-nowrap">
-                   <span className="text-lg font-black text-[#A5B4FC] tracking-tighter drop-shadow-lg">KRAUZ ACADEMY</span>
-               </div>
+               {/* Decorative Lines */}
+               <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+               <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
            </div>
 
-           <div className="mt-4">
-               <h1 className="text-2xl font-black text-white tracking-tighter flex items-center justify-center gap-1">
-                   SALES<span className="text-[#6C5DD3]">PRO</span>
+           <div className="mt-6">
+               <h1 className="text-3xl font-black text-white tracking-tighter flex items-center justify-center gap-1">
+                   SPARTAN<span className="text-[#6C5DD3]">OS</span>
                </h1>
-               <p className="text-slate-500 font-bold text-[8px] uppercase tracking-[0.4em]">Spartan Edition</p>
+               <p className="text-slate-500 font-bold text-[9px] uppercase tracking-[0.4em] mt-2">Neural Link Terminal v4.0</p>
            </div>
        </div>
 
        {/* Mode Toggle */}
-       <div className="bg-[#131419]/60 p-1 rounded-xl flex border border-white/5 relative mx-2">
+       <div className="bg-[#131419]/60 p-1 rounded-2xl flex border border-white/5 relative mx-2 overflow-hidden">
           <div 
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#4A3D8D]/80 rounded-lg transition-all duration-300 shadow-lg ${isRegisterMode ? 'left-[calc(50%+2px)]' : 'left-1'}`}
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#4A3D8D] rounded-xl transition-all duration-300 shadow-lg ${isRegisterMode ? 'left-[calc(50%+2px)]' : 'left-1'}`}
           ></div>
           <button 
              onClick={() => { setIsRegisterMode(false); setErrors({}); }} 
-             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${!isRegisterMode ? 'text-white' : 'text-slate-500'}`}
+             className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${!isRegisterMode ? 'text-white' : 'text-slate-500'}`}
           >
-             вход
+             LOGIN
           </button>
           <button 
              onClick={() => { setIsRegisterMode(true); setErrors({}); }} 
-             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${isRegisterMode ? 'text-white' : 'text-slate-500'}`}
+             className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${isRegisterMode ? 'text-white' : 'text-slate-500'}`}
           >
-             вступить
+             ENLIST
           </button>
        </div>
 
@@ -231,30 +249,26 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
        <div className="space-y-4 px-2">
            <div className="relative group">
                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className={`h-5 w-5 ${errors.username ? 'text-red-500' : 'text-slate-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  <span className={`text-lg ${errors.username ? 'text-red-500' : 'text-slate-600'}`}>@</span>
                </div>
                <input 
                  value={username} 
                  onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_@]/g, ''))} 
-                 className={`w-full bg-[#131419]/80 border ${errors.username ? 'border-red-500/50' : 'border-white/5'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3]/50 transition-all`}
-                 placeholder="Telegram Username"
+                 className={`w-full bg-[#0A0B0E] border ${errors.username ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-700 outline-none focus:border-[#6C5DD3] transition-all`}
+                 placeholder="Telegram ID"
                />
            </div>
 
            <div className="relative group">
                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className={`h-5 w-5 ${errors.password ? 'text-red-500' : 'text-slate-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+                  <span className={`text-lg ${errors.password ? 'text-red-500' : 'text-slate-600'}`}>🔒</span>
                </div>
                <input 
                  type="password"
                  value={password} 
                  onChange={e => setPassword(e.target.value)} 
-                 className={`w-full bg-[#131419]/80 border ${errors.password ? 'border-red-500/50' : 'border-white/5'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-600 outline-none focus:border-[#6C5DD3]/50 transition-all`}
-                 placeholder="Код доступа"
+                 className={`w-full bg-[#0A0B0E] border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-slate-700 outline-none focus:border-[#6C5DD3] transition-all`}
+                 placeholder="Access Code"
                />
            </div>
            
@@ -269,33 +283,59 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
        <div className="px-2">
            <button 
                 onClick={handleAuthSubmit} 
-                className="w-full bg-[#2B4E99] text-white rounded-2xl py-4 px-6 font-black text-xs uppercase tracking-widest shadow-xl shadow-[#2B4E99]/20 hover:bg-[#345DB3] active:scale-95 transition-all flex items-center justify-center gap-3"
+                className="w-full bg-gradient-to-r from-[#2B4E99] to-[#4A3D8D] text-white rounded-2xl py-4 px-6 font-black text-xs uppercase tracking-widest shadow-lg shadow-[#2B4E99]/30 hover:shadow-[#2B4E99]/50 active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
            >
-              {isRegisterMode ? 'ИНИЦИАЛИЗАЦИЯ' : 'ДОСТУП К ТЕРМИНАЛУ'} 
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
+              <span className="relative z-10">{isRegisterMode ? 'INITIATE PROTOCOL' : 'CONNECT TO MAINFRAME'}</span>
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
            </button>
        </div>
     </div>
   );
 
+  const renderDbSync = () => (
+      <div className="w-full animate-fade-in py-10 px-4">
+           <div className="text-center mb-8">
+               <h3 className="text-[#00CEFF] font-mono text-sm tracking-widest mb-2 animate-pulse">{loadingText}</h3>
+               <div className="text-4xl font-black text-white">{syncProgress}%</div>
+           </div>
+
+           {/* Progress Bar */}
+           <div className="w-full h-2 bg-[#131419] rounded-full overflow-hidden mb-8 border border-white/5">
+               <div 
+                  className="h-full bg-[#00CEFF] shadow-[0_0_15px_#00CEFF] transition-all duration-200 ease-out relative" 
+                  style={{ width: `${syncProgress}%` }}
+               >
+                   <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 animate-pulse"></div>
+               </div>
+           </div>
+
+           {/* Console Log Simulation */}
+           <div className="bg-black/40 rounded-xl p-4 font-mono text-[10px] text-slate-400 h-32 overflow-hidden border border-white/5 flex flex-col justify-end">
+               <p className="opacity-50">> Establishing secure connection...</p>
+               <p className="opacity-60">> Handshake verified.</p>
+               {syncProgress > 30 && <p className="opacity-70 text-green-500">> Neural link active.</p>}
+               {syncProgress > 60 && <p className="opacity-80 text-[#00CEFF]">> Downloading mission data...</p>}
+               {syncProgress > 80 && <p className="opacity-90">> Synchronizing preferences...</p>}
+               <p className="animate-pulse">> _</p>
+           </div>
+      </div>
+  );
+
   const renderIdentity = () => (
       <div className={`space-y-8 w-full animate-slide-in ${isShake ? 'animate-shake' : ''}`}>
            <div className="text-center">
-              <h2 className="text-2xl font-black text-white tracking-tight">ИДЕНТИФИКАЦИЯ</h2>
-              <p className="text-slate-500 text-xs uppercase tracking-widest mt-2">Установка нейросвязи</p>
+              <h2 className="text-2xl font-black text-white tracking-tight">IDENTITY VERIFICATION</h2>
+              <p className="text-slate-500 text-xs uppercase tracking-widest mt-2">Required for Neural Link</p>
           </div>
 
           <div className="space-y-4">
               <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1.5 block">Позывной (Отображаемое имя)</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1.5 block">Callsign</label>
                   <input 
                     value={realName} 
                     onChange={e => setRealName(e.target.value)} 
                     className={`w-full bg-[#131419] border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-4 px-6 text-white text-lg font-bold text-center outline-none focus:border-[#6C5DD3] transition-colors`}
-                    placeholder="Например: Maverick"
+                    placeholder="e.g. Maverick"
                   />
               </div>
 
@@ -310,7 +350,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
                       <>
                         <img src={selectedImage} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="text-white font-bold text-xs uppercase">Изменить</span>
+                            <span className="text-white font-bold text-xs uppercase">Retake</span>
                         </div>
                       </>
                   ) : (
@@ -318,7 +358,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
                           <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                              <span className="text-2xl">📸</span>
                           </div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Загрузить фото</span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Upload Photo</span>
                       </div>
                   )}
                   <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
@@ -330,8 +370,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
           </div>
           
           <div className="flex gap-3 pt-4">
-              <button onClick={() => setStep('AUTH_FORM')} className="px-6 py-4 rounded-2xl bg-white/5 text-slate-400 font-bold text-xs uppercase hover:bg-white/10 transition-colors">Назад</button>
-              <Button fullWidth onClick={handleIdentitySubmit} className="!rounded-2xl">ПОДТВЕРДИТЬ ЛИЧНОСТЬ</Button>
+              <button onClick={() => setStep('AUTH_FORM')} className="px-6 py-4 rounded-2xl bg-white/5 text-slate-400 font-bold text-xs uppercase hover:bg-white/10 transition-colors">Back</button>
+              <Button fullWidth onClick={handleIdentitySubmit} className="!rounded-2xl">CONFIRM IDENTITY</Button>
           </div>
       </div>
   );
@@ -339,16 +379,19 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   const renderScanning = () => (
       <div className="text-center animate-fade-in w-full py-10">
            <div className="relative w-56 h-56 mx-auto mb-10">
-                {/* Image Background */}
-                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1F2128] relative z-10">
-                     {selectedImage && <img src={selectedImage} className="w-full h-full object-cover filter grayscale contrast-125" />}
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1F2128] relative z-10 bg-black">
+                     {selectedImage && <img src={selectedImage} className="w-full h-full object-cover filter grayscale contrast-125 opacity-50" />}
                 </div>
                 
                 {/* Face ID Scanner Overlay */}
                 <div className="absolute inset-0 rounded-full z-20 overflow-hidden">
-                    <div className="absolute inset-0 bg-[#6C5DD3]/20"></div>
+                    <div className="absolute inset-0 bg-[#6C5DD3]/10"></div>
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-[#6C5DD3] shadow-[0_0_20px_#6C5DD3] animate-scan-vertical"></div>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 border border-[#6C5DD3]/50 rounded-lg opacity-50 animate-ping-slow"></div>
+                    
+                    {/* Data Points */}
+                    <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-[#00CEFF] rounded-full animate-ping"></div>
+                    <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-[#00CEFF] rounded-full animate-ping delay-100"></div>
+                    <div className="absolute top-1/4 right-1/4 w-1 h-1 bg-[#00CEFF] rounded-full animate-ping delay-200"></div>
                 </div>
 
                 {/* Outer Rotating Rings */}
@@ -358,14 +401,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
 
            <h3 className="text-xl font-black text-white mb-2">{loadingText}</h3>
            <p className="text-[#6C5DD3] font-mono text-xs tracking-widest animate-pulse">
-               ID: {Date.now().toString().slice(-8)} • СОВПАДЕНИЕ: 99.9%
+               ID: {Date.now().toString().slice(-8)} • MATCH: 99.9%
            </p>
            
            <style>{`
              @keyframes scan-vertical { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } } 
              .animate-scan-vertical { animation: scan-vertical 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
              .animate-spin-slow { animation: spin 10s linear infinite; }
-             .animate-ping-slow { animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
            `}</style>
       </div>
   );
@@ -373,8 +415,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
   const renderCustomization = () => (
       <div className="space-y-6 w-full animate-slide-in">
            <div className="text-center mb-6">
-              <h2 className="text-xl font-black text-white">ВЫБОР ЭКИПИРОВКИ</h2>
-              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Выберите стиль боевого аватара</p>
+              <h2 className="text-xl font-black text-white">SELECT LOADOUT</h2>
+              <p className="text-slate-500 text-xs uppercase tracking-widest mt-1">Choose your combat avatar style</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -407,7 +449,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
 
           <div className="pt-4">
             <Button fullWidth onClick={handleFinalize} className="!rounded-2xl !py-4 shadow-xl shadow-[#6C5DD3]/20" icon="⚡">
-                НАЧАТЬ ГЕНЕРАЦИЮ
+                FORGE AVATAR
             </Button>
           </div>
       </div>
@@ -429,7 +471,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
         <div className="w-48 h-1 bg-[#1F2128] mx-auto rounded-full overflow-hidden">
             <div className="h-full bg-[#6C5DD3] w-1/2 animate-progress"></div>
         </div>
-        <p className="text-slate-500 text-[10px] mt-4 uppercase tracking-widest">Нейросеть активна</p>
+        <p className="text-slate-500 text-[10px] mt-4 uppercase tracking-widest">Neural Link Active</p>
         <style>{`
             .animate-spin-reverse { animation: spin 2s linear infinite reverse; }
             @keyframes progress { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
@@ -446,7 +488,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
          
          {/* Grid Floor */}
          <div className="fixed bottom-0 left-0 w-full h-[30vh] bg-[linear-gradient(to_top,#0F1115_0%,transparent_100%)] z-10"></div>
-         {/* Updated Background Grid for better contrast matching screenshot */}
          <div className="fixed inset-0 opacity-[0.05] z-0" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
          {/* Main Card */}
@@ -455,17 +496,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
                  {/* Top sheen */}
                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                  
-                 {/* Step Content */}
                  {step === 'AUTH_FORM' && renderAuthForm()}
+                 {step === 'DB_SYNC' && renderDbSync()}
                  {step === 'IDENTITY' && renderIdentity()}
                  {step === 'SCANNING' && renderScanning()}
                  {step === 'CUSTOMIZATION' && renderCustomization()}
                  {step === 'FINALIZING' && renderFinalizing()}
              </div>
              
-             {/* Footer copyright matching screenshot exactly */}
              <div className="text-center mt-8 opacity-40">
-                 <p className="text-[9px] text-white uppercase tracking-[0.4em] font-medium">SPARTAN SALES OS V4.0</p>
+                 <p className="text-[9px] text-white uppercase tracking-[0.4em] font-medium">SECURE CONNECTION ESTABLISHED</p>
              </div>
          </div>
     </div>

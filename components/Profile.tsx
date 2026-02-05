@@ -1,7 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
-import { UserProgress, CalendarEvent } from '../types';
+import React, { useState } from 'react';
+import { UserProgress, CalendarEvent, ThemeConfig } from '../types';
 import { AnimatedCounter } from './AnimatedCounter';
+import { telegram } from '../services/telegramService';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 interface ProfileProps {
   userProgress: UserProgress;
@@ -11,345 +13,194 @@ interface ProfileProps {
   events: CalendarEvent[];
   onReferral: () => void;
   onShareStory: () => void;
-  isSettingsOpen: boolean; // Controlled by SmartNav
+  isSettingsOpen: boolean; 
+  theme?: ThemeConfig;
 }
-
-type ViewMode = 'DASHBOARD' | 'LEADERBOARD';
 
 export const Profile: React.FC<ProfileProps> = ({ 
     userProgress, 
     onLogout, 
-    allUsers, 
     onUpdateUser, 
-    events, 
-    onReferral, 
+    allUsers,
+    onReferral,
     onShareStory,
-    isSettingsOpen 
+    isSettingsOpen,
+    theme
 }) => {
-  const [viewMode, setViewMode] = useState<ViewMode>('DASHBOARD');
-  
-  // Settings State
+  const [viewMode, setViewMode] = useState<'DASHBOARD' | 'LEADERBOARD'>('DASHBOARD');
   const [editName, setEditName] = useState(userProgress.name);
-  const [editTelegram, setEditTelegram] = useState(userProgress.telegramUsername || '');
-  const [editNotifications, setEditNotifications] = useState(userProgress.notifications);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Calendar State
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const accent = theme?.accentColor || '#D4AF37';
 
-  // Calculated Stats
-  const registrationDate = userProgress.registrationDate ? new Date(userProgress.registrationDate) : new Date();
-  const daysInSystem = Math.floor((new Date().getTime() - registrationDate.getTime()) / (1000 * 3600 * 24)) + 1;
-  const winRate = Math.min(100, 50 + (userProgress.completedLessonIds.length * 5)); 
-  const circleCircumference = 2 * Math.PI * 22; // r=22
-  const strokeDashoffset = circleCircumference - (circleCircumference * winRate) / 100;
-
-  const hasChanges = 
-    editName !== userProgress.name || 
-    editTelegram !== (userProgress.telegramUsername || '') ||
-    JSON.stringify(editNotifications) !== JSON.stringify(userProgress.notifications);
+  // Prepare Data for Radar Chart
+  const skillsData = [
+    { subject: 'Sales', A: userProgress.stats.skills.sales, fullMark: 100 },
+    { subject: 'Tactics', A: userProgress.stats.skills.tactics, fullMark: 100 },
+    { subject: 'Psy', A: userProgress.stats.skills.psychology, fullMark: 100 },
+    { subject: 'Discipline', A: userProgress.stats.skills.discipline, fullMark: 100 },
+    { subject: 'XP', A: Math.min(userProgress.xp / 100, 100), fullMark: 100 },
+  ];
 
   const handleSaveSettings = () => {
     setIsSaving(true);
     setTimeout(() => {
-        onUpdateUser({
-            name: editName,
-            telegramUsername: editTelegram,
-            notifications: editNotifications
-        });
+        onUpdateUser({ name: editName });
         setIsSaving(false);
+        telegram.haptic('success');
     }, 800);
   };
 
-  const toggleNotification = (key: keyof typeof editNotifications) => {
-    setEditNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleShareProgress = () => {
+      telegram.haptic('heavy');
+      telegram.shareProgress(userProgress.level, userProgress.xp);
   };
 
-  const renderStatsRow = () => (
-      <div className="flex justify-between items-center px-6 mb-8 gap-3">
-          {/* Win/Lose Card */}
-          <div className="flex flex-col items-center gap-2 flex-1 animate-scale-in delay-100 p-2 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 cursor-pointer">
-              <div className="relative w-14 h-14 flex items-center justify-center group">
-                  <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_8px_rgba(0,206,255,0.3)]">
-                      <circle cx="28" cy="28" r="22" stroke="#1F2128" strokeWidth="4" fill="none" />
-                      <circle 
-                        cx="28" cy="28" r="22" 
-                        stroke="#00CEFF" strokeWidth="4" fill="none" 
-                        strokeDasharray={circleCircumference} 
-                        strokeDashoffset={strokeDashoffset} 
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out group-hover:drop-shadow-[0_0_10px_#00CEFF]"
-                      />
-                  </svg>
-                  <span className="absolute text-[10px] font-bold text-[#00CEFF] group-hover:scale-110 transition-transform">
-                      <AnimatedCounter value={winRate} />%
-                  </span>
-              </div>
-              <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">Rate</span>
-          </div>
-
-          {/* Level Card */}
-          <div className="flex flex-col items-center gap-2 transform -translate-y-4 flex-1 animate-scale-in delay-200">
-               <div className="w-16 h-16 bg-[#1F2128] rounded-2xl flex items-center justify-center border border-white/5 relative shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-110 hover:bg-[#252830] hover:border-[#00CEFF]/30 group cursor-pointer overflow-hidden">
-                   <div className="absolute -top-2 -right-2 text-xl animate-bounce z-10">✨</div>
-                   <div className="text-[#00CEFF] font-black text-2xl group-hover:scale-125 transition-transform duration-300 relative z-10">
-                       <AnimatedCounter value={userProgress.level} />
-                   </div>
-                   
-                   {/* Shimmer Effect */}
-                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"></div>
-                   <div className="absolute inset-0 bg-[#00CEFF]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-               </div>
-               <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">Level</span>
-          </div>
-
-          {/* Days Card */}
-          <div className="flex flex-col items-center gap-2 flex-1 animate-scale-in delay-300 p-2 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 cursor-pointer group">
-              <div className="w-14 h-14 bg-[#1F2128] rounded-2xl flex items-center justify-center border border-white/5 text-white/80 transition-all duration-300 group-hover:bg-[#252830] group-hover:text-[#D4AF37] group-hover:border-[#D4AF37]/30 shadow-sm relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#D4AF37]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <div className="flex flex-col items-center relative z-10">
-                      <span className="text-white font-bold text-lg leading-none mb-1 group-hover:text-[#D4AF37] transition-colors">
-                          <AnimatedCounter value={daysInSystem} />
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-white/40 group-hover:text-[#D4AF37] group-hover:animate-pulse"><path fillRule="evenodd" d="M12.963 2.286a.75.75 0 00-1.071-.136 9.742 9.742 0 00-3.539 6.177 7.547 7.547 0 01-1.705-1.715.75.75 0 00-1.152-.082A9 9 0 1015.68 4.534a7.46 7.46 0 01-2.717-2.248zM15.75 14.25a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" /></svg>
-                  </div>
-              </div>
-              <span className="text-white/40 text-[10px] font-bold uppercase tracking-wide">Streak</span>
-          </div>
-      </div>
-  );
-
-  const renderCalendarStrip = () => {
-      const today = new Date();
-      const days = [];
-      for (let i = -3; i <= 3; i++) {
-          const d = new Date(selectedDate);
-          d.setDate(selectedDate.getDate() + i);
-          days.push(d);
-      }
-      const weekDays = ['Sun', 'Mon', 'Tue', 'Wen', 'Thu', 'Fri', 'Sat'];
-
+  if (viewMode === 'LEADERBOARD') {
       return (
-          <div className="flex justify-between items-center px-4 mb-8 animate-slide-up fill-mode-both delay-100">
-              {days.map((date, i) => {
-                  const isSelected = date.getDate() === selectedDate.getDate() && date.getMonth() === selectedDate.getMonth();
-                  const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth();
-                  
-                  return (
-                      <button 
-                        key={i} 
-                        onClick={() => setSelectedDate(date)}
-                        className={`flex flex-col items-center justify-center gap-1.5 w-[44px] h-[70px] rounded-[1.2rem] transition-all duration-300 relative
-                            ${isSelected 
-                                ? 'bg-[#1F2128] border border-[#00CEFF]/50 shadow-[0_0_15px_#00CEFF] -translate-y-2 scale-110 z-10' 
-                                : 'hover:bg-white/5 border border-transparent active:scale-95'}
-                        `}
-                      >
-                          {isSelected && <div className="absolute inset-0 bg-[#00CEFF]/5 rounded-[1.2rem] animate-pulse"></div>}
-                          <span className={`text-[9px] font-bold uppercase tracking-tight relative z-10 ${isSelected ? 'text-[#00CEFF]' : 'text-slate-500'}`}>
-                              {weekDays[date.getDay()]}
-                          </span>
-                          <span className={`text-sm font-black relative z-10 ${isSelected ? 'text-white' : 'text-slate-400'} ${isToday && !isSelected ? 'text-[#00B050]' : ''}`}>
-                              {date.getDate()}
-                          </span>
-                          {isSelected && <div className="w-1 h-1 bg-[#00CEFF] rounded-full shadow-[0_0_5px_#00CEFF] relative z-10"></div>}
-                      </button>
-                  );
-              })}
+        <div className="px-6 py-8 animate-fade-in pb-32 min-h-screen text-white">
+          <div className="flex items-center gap-4 mb-8">
+            <button onClick={() => setViewMode('DASHBOARD')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10">←</button>
+            <h2 className="text-2xl font-black">RANKINGS</h2>
           </div>
-      );
-  };
-
-  const renderDashboard = () => (
-      <div className="animate-fade-in">
-          {/* Avatar Section */}
-          <div className="flex flex-col items-center mb-8 animate-slide-up pt-8">
-              <div className="relative w-32 h-32 mb-3 group cursor-pointer">
-                  <div className="absolute -inset-4 rounded-full border border-dashed border-[#00CEFF]/20 animate-[spin_10s_linear_infinite]"></div>
-                  <div className="absolute inset-0 bg-[#00CEFF] rounded-full blur-[50px] opacity-20 group-hover:opacity-40 transition-opacity duration-500 animate-pulse-slow"></div>
-                  <div className="w-full h-full rounded-full border-4 border-[#1F2128] overflow-hidden relative bg-[#131419] shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:rotate-2 group-hover:border-[#00CEFF]/50">
-                      <img 
-                          src={userProgress.avatarUrl || `https://ui-avatars.com/api/?name=${userProgress.name}`} 
-                          className="w-full h-full object-cover transform scale-110 group-hover:scale-100 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                  </div>
-                  <div className="absolute bottom-2 right-2 w-7 h-7 bg-[#1F2128] rounded-full flex items-center justify-center z-10 group-hover:scale-110 transition-transform">
-                      <div className="w-4 h-4 bg-[#00B050] rounded-full border-2 border-[#1F2128] animate-pulse shadow-[0_0_8px_#00B050]"></div>
-                  </div>
-              </div>
-              <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                  {userProgress.name}
-                  {userProgress.role === 'ADMIN' && <span className="text-[#00CEFF] text-sm">🛡️</span>}
-              </h2>
-              <p className="text-slate-500 text-xs font-bold tracking-widest uppercase">@{userProgress.telegramUsername || 'recruit'}</p>
+          <div className="space-y-4">
+            {allUsers.sort((a,b) => b.xp - a.xp).map((u, i) => (
+                <div key={i} className={`p-4 rounded-2xl flex items-center gap-4 border ${u.name === userProgress.name ? 'border-[#6C5DD3] bg-[#6C5DD3]/10' : 'border-white/5 bg-white/5'}`}>
+                    <span className="text-xs font-black opacity-40">#{i+1}</span>
+                    <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}`} className="w-10 h-10 rounded-full bg-slate-800 object-cover" />
+                    <span className="flex-1 font-bold truncate">{u.name}</span>
+                    <span className="font-black text-[#6C5DD3]">{u.xp} XP</span>
+                </div>
+            ))}
           </div>
-
-          {renderStatsRow()}
-          {renderCalendarStrip()}
-
-          {/* Quick Actions */}
-          <div className="px-4 mb-4 grid grid-cols-2 gap-4">
-              <button onClick={onReferral} className="bg-[#6C5DD3]/10 p-3 rounded-2xl border border-[#6C5DD3]/30 flex items-center gap-3 active:scale-95 transition-transform hover:bg-[#6C5DD3]/20 hover:border-[#6C5DD3]/50 group">
-                  <div className="w-10 h-10 rounded-full bg-[#6C5DD3]/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">🤝</div>
-                  <div className="text-left">
-                      <div className="text-white font-bold text-xs group-hover:text-[#6C5DD3] transition-colors">Приведи друга</div>
-                      <div className="text-[#6C5DD3] font-black text-[9px]">+10,000 XP</div>
-                  </div>
-              </button>
-              <button onClick={onShareStory} className="bg-[#D4AF37]/10 p-3 rounded-2xl border border-[#D4AF37]/30 flex items-center gap-3 active:scale-95 transition-transform hover:bg-[#D4AF37]/20 hover:border-[#D4AF37]/50 group">
-                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">📸</div>
-                  <div className="text-left">
-                      <div className="text-white font-bold text-xs group-hover:text-[#D4AF37] transition-colors">Репост сторис</div>
-                      <div className="text-[#D4AF37] font-black text-[9px]">+400 XP</div>
-                  </div>
-              </button>
-          </div>
-
-          {/* Widgets Grid */}
-          <div className="grid grid-cols-2 gap-4 px-4 pb-32 animate-slide-up delay-200 fill-mode-both">
-              <button onClick={() => setViewMode('LEADERBOARD')} className="bg-[#1F2128] p-5 rounded-[2rem] border border-white/5 flex flex-col items-start gap-4 hover:border-white/20 transition-all duration-300 group relative overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 active:scale-[0.98]">
-                  <div className="flex -space-x-3 relative z-10 transition-all duration-300 group-hover:space-x-[-8px]">
-                      {allUsers.slice(0, 3).map((u, i) => (
-                          <div key={i} className="w-10 h-10 rounded-full border-2 border-[#1F2128] overflow-hidden bg-slate-800 transition-transform hover:scale-110 hover:z-20">
-                               <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}`} className="w-full h-full object-cover" />
-                          </div>
-                      ))}
-                  </div>
-                  <div className="relative z-10 text-left">
-                      <h3 className="text-white font-bold text-lg leading-none mb-1">Рейтинг</h3>
-                      <div className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-[#00CEFF] rounded-full animate-pulse"></span>
-                          <p className="text-[#00CEFF] text-[10px] font-black uppercase tracking-widest">Топ бойцов</p>
-                      </div>
-                  </div>
-              </button>
-              
-              <div className="bg-[#1F2128] p-5 rounded-[2rem] border border-white/5 flex flex-col items-start gap-4 hover:border-white/20 transition-all duration-300 group">
-                  <div className="w-10 h-10 rounded-full bg-[#00B050]/20 flex items-center justify-center text-[#00B050] text-xl border border-[#00B050]/20">
-                    🏆
-                  </div>
-                  <div>
-                       <h3 className="text-white font-bold text-lg leading-none mb-1">Трофеи</h3>
-                       <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Скоро</p>
-                  </div>
-              </div>
-          </div>
-      </div>
-  );
-
-  const renderLeaderboard = () => (
-    <div className="px-6 py-8 animate-fade-in pb-32 min-h-screen">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => setViewMode('DASHBOARD')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white active:scale-95">
-          ←
-        </button>
-        <h2 className="text-2xl font-black text-white">Таблица Лидеров</h2>
-      </div>
-      
-      <div className="space-y-4">
-        {allUsers
-          .sort((a, b) => b.xp - a.xp)
-          .map((u, i) => (
-          <div key={i} className={`p-4 rounded-2xl flex items-center gap-4 border ${u.telegramUsername === userProgress.telegramUsername ? 'bg-[#6C5DD3]/20 border-[#6C5DD3]/50' : 'bg-[#1F2128] border-white/5'}`}>
-            <div className={`w-8 h-8 flex items-center justify-center font-black text-sm rounded-lg ${i < 3 ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
-              #{i + 1}
-            </div>
-            <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.name}`} className="w-10 h-10 rounded-full bg-slate-700 object-cover" />
-            <div className="flex-1">
-              <h4 className="text-white font-bold text-sm">{u.name}</h4>
-              <p className="text-slate-500 text-[10px] font-bold uppercase">{u.level} LVL</p>
-            </div>
-            <div className="text-right">
-              <span className="text-[#6C5DD3] font-black text-sm">{u.xp} XP</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderSettingsOverlay = () => {
-    if (!isSettingsOpen) return null;
-    return (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl animate-fade-in p-6 pt-20 overflow-y-auto">
-             <div className="max-w-lg mx-auto space-y-8">
-                 <div className="text-center">
-                    <h2 className="text-2xl font-black text-white">Настройки Профиля</h2>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">Конфиденциальность и уведомления</p>
-                 </div>
-
-                 <div className="space-y-4">
-                     <div className="space-y-1">
-                         <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Позывной</label>
-                         <input 
-                            value={editName} 
-                            onChange={e => setEditName(e.target.value)} 
-                            className="w-full bg-[#1F2128] border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-[#6C5DD3]"
-                        />
-                     </div>
-                     <div className="space-y-1">
-                         <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Telegram</label>
-                         <input 
-                            value={editTelegram} 
-                            onChange={e => setEditTelegram(e.target.value)} 
-                            className="w-full bg-[#1F2128] border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-[#6C5DD3]"
-                        />
-                     </div>
-                 </div>
-
-                 <div className="bg-[#1F2128] rounded-[2rem] p-6 border border-white/5 space-y-4">
-                     <h3 className="text-white font-bold text-sm mb-2">Уведомления</h3>
-                     {[
-                         { k: 'pushEnabled', l: 'Push-уведомления', icon: '🔔' },
-                         { k: 'deadlineReminders', l: 'Напоминания о дедлайнах', icon: '⏰' },
-                         { k: 'chatNotifications', l: 'Сообщения из штаба', icon: '💬' }
-                     ].map((item) => (
-                        <div key={item.k} className="flex items-center justify-between py-2">
-                             <div className="flex items-center gap-3">
-                                <span className="text-lg opacity-70">{item.icon}</span>
-                                <span className="text-slate-300 text-xs font-bold">{item.l}</span>
-                             </div>
-                             <button 
-                                onClick={() => toggleNotification(item.k as any)}
-                                className={`w-12 h-6 rounded-full p-1 transition-colors ${editNotifications[item.k as keyof typeof editNotifications] ? 'bg-[#00B050]' : 'bg-slate-700'}`}
-                             >
-                                 <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${editNotifications[item.k as keyof typeof editNotifications] ? 'translate-x-6' : 'translate-x-0'}`} />
-                             </button>
-                        </div>
-                     ))}
-                 </div>
-                 
-                 <div className="pt-4">
-                     <button
-                        onClick={handleSaveSettings}
-                        disabled={!hasChanges || isSaving}
-                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg transition-all
-                            ${!hasChanges || isSaving 
-                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none' 
-                                : 'bg-[#6C5DD3] text-white hover:scale-[1.02] shadow-[#6C5DD3]/30'
-                            }
-                        `}
-                     >
-                        {isSaving ? 'Сохранение...' : 'Сохранить Изменения'}
-                     </button>
-                 </div>
-
-                 <button onClick={onLogout} className="w-full py-4 text-red-500 font-bold text-xs uppercase tracking-widest hover:bg-red-500/10 rounded-2xl transition-colors">
-                     Выйти из системы
-                 </button>
-                 
-                 <div className="h-20"></div>
-             </div>
         </div>
-    );
-  };
+      );
+  }
 
   return (
-      <div className="min-h-screen relative">
-          {isSettingsOpen && renderSettingsOverlay()}
-          
-          {viewMode === 'DASHBOARD' ? renderDashboard() : renderLeaderboard()}
+      <div className="min-h-screen text-white pb-32">
+          {/* Settings Overlay */}
+          {isSettingsOpen && (
+            <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl p-6 pt-20 animate-fade-in overflow-y-auto">
+                <div className="max-w-md mx-auto space-y-8">
+                    <h2 className="text-3xl font-black text-center">SYSTEM SETTINGS</h2>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                             <label className="text-[10px] uppercase font-bold text-slate-500">Callsign</label>
+                             <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 font-bold outline-none focus:border-[#6C5DD3]" />
+                        </div>
+                        
+                        <div className="bg-white/5 rounded-3xl p-6 border border-white/10 space-y-4">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Notification Protocols</p>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold">Combat Alerts</span>
+                                <div className="w-10 h-6 bg-[#00B050] rounded-full relative"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
+                            </div>
+                        </div>
+
+                        <button onClick={handleSaveSettings} disabled={isSaving} className="w-full py-4 bg-[#6C5DD3] rounded-2xl font-black uppercase text-xs tracking-widest">
+                            {isSaving ? 'SAVING...' : 'SAVE CONFIG'}
+                        </button>
+                    </div>
+                    <button onClick={onLogout} className="w-full text-red-500 font-bold text-xs uppercase py-4 border border-red-500/20 rounded-2xl hover:bg-red-500/10">TERMINATE SESSION</button>
+                </div>
+            </div>
+          )}
+
+          {/* Header Card (Service Record) */}
+          <div className="pt-8 px-4 mb-6">
+              <div 
+                className="relative overflow-hidden rounded-[2.5rem] bg-[#1F2128] border border-white/10 shadow-2xl"
+                style={{ borderRadius: theme?.borderRadius === 'SHARP' ? '0.5rem' : '2.5rem' }}
+              >
+                  {/* Background Image */}
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${userProgress.avatarUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(20px)' }}></div>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1F2128]/80 to-[#1F2128]"></div>
+
+                  <div className="relative z-10 p-6 flex flex-col items-center">
+                      {/* Avatar */}
+                      <div className="relative w-32 h-32 mb-4 group">
+                          <div className="absolute inset-0 rounded-full blur-xl opacity-40 animate-pulse" style={{ backgroundColor: accent }}></div>
+                          <img src={userProgress.avatarUrl || 'https://via.placeholder.com/150'} className="w-full h-full rounded-full border-4 border-[#1F2128] object-cover relative z-10 shadow-2xl" />
+                          <div className="absolute bottom-0 right-0 z-20 bg-[#1F2128] rounded-full p-1 border border-white/10">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#8B7326] flex items-center justify-center text-black font-black text-xs shadow-lg">
+                                  {userProgress.level}
+                              </div>
+                          </div>
+                      </div>
+
+                      <h2 className="text-3xl font-black tracking-tight mb-1">{userProgress.name}</h2>
+                      <div className="flex items-center gap-2 mb-6">
+                          <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                             {userProgress.role} CLASS
+                          </span>
+                      </div>
+
+                      {/* Radar Chart */}
+                      <div className="w-full h-[200px] -ml-4">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skillsData}>
+                              <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                              <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold' }} />
+                              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                              <Radar
+                                name="Skills"
+                                dataKey="A"
+                                stroke={accent}
+                                strokeWidth={2}
+                                fill={accent}
+                                fillOpacity={0.3}
+                              />
+                            </RadarChart>
+                         </ResponsiveContainer>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="px-6 mb-8 grid grid-cols-2 gap-3">
+              <button onClick={handleShareProgress} className="bg-white text-black py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-slate-200 active:scale-95 transition-all">
+                  <span>🚀</span> SHARE STATUS
+              </button>
+              <button onClick={() => setViewMode('LEADERBOARD')} className="bg-[#1F2128] border border-white/10 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-white/5 active:scale-95 transition-all">
+                  <span>🏆</span> LEADERBOARD
+              </button>
+          </div>
+
+          {/* Detailed Stats */}
+          <div className="px-6 space-y-4">
+              <h3 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-4 ml-2">Service Record</h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#1F2128] p-4 rounded-2xl border border-white/5">
+                      <div className="text-2xl font-black text-[#6C5DD3] mb-1"><AnimatedCounter value={userProgress.xp} /></div>
+                      <div className="text-[9px] text-slate-500 font-bold uppercase">Total XP Earned</div>
+                  </div>
+                  <div className="bg-[#1F2128] p-4 rounded-2xl border border-white/5">
+                      <div className="text-2xl font-black text-[#00B050] mb-1">{userProgress.completedLessonIds.length}</div>
+                      <div className="text-[9px] text-slate-500 font-bold uppercase">Missions Complete</div>
+                  </div>
+                  <div className="bg-[#1F2128] p-4 rounded-2xl border border-white/5">
+                      <div className="text-2xl font-black text-[#D4AF37] mb-1">{userProgress.stats.notebookEntries.habits}</div>
+                      <div className="text-[9px] text-slate-500 font-bold uppercase">Habit Streaks</div>
+                  </div>
+                  <div className="bg-[#1F2128] p-4 rounded-2xl border border-white/5">
+                      <div className="text-2xl font-black text-white mb-1">{userProgress.stats.suggestionsMade}</div>
+                      <div className="text-[9px] text-slate-500 font-bold uppercase">Intel Provided</div>
+                  </div>
+              </div>
+
+              {/* Recruitment Link */}
+              <div onClick={onReferral} className="mt-6 bg-gradient-to-r from-[#2B4E99] to-[#1F2128] p-6 rounded-3xl border border-white/10 relative overflow-hidden group cursor-pointer">
+                  <div className="relative z-10">
+                      <h4 className="text-lg font-black text-white mb-1">Recruit New Spartans</h4>
+                      <p className="text-xs text-slate-300 mb-4">Earn 10,000 XP for every soldier you bring to the cause.</p>
+                      <span className="bg-white/10 px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest text-white border border-white/20">Copy Referral Link</span>
+                  </div>
+                  <div className="absolute right-[-20px] bottom-[-20px] text-8xl opacity-10 rotate-12 group-hover:rotate-0 transition-transform">🤝</div>
+              </div>
+          </div>
       </div>
   );
 };

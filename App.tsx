@@ -21,12 +21,22 @@ const DEFAULT_CONFIG: AppConfig = {
   appDescription: 'Elite Sales Academy',
   primaryColor: '#1A1A1A',
   systemInstruction: `Ты — Командир элитного отряда продаж "300 Спартанцев". Твоя задача: сделать из новобранца (пользователя) настоящую машину продаж.`,
+  theme: {
+      cardStyle: 'GLASS',
+      borderRadius: 'ROUNDED',
+      accentColor: '#D4AF37'
+  },
+  database: {
+      syncEnabled: true,
+      lastBackup: null,
+      crmWebhook: '',
+      autoBackupInterval: 'DAILY'
+  },
   integrations: {
     telegramBotToken: '',
     googleDriveFolderId: '',
-    crmWebhookUrl: '',
-    /* Fix: Use gemini-3-pro-preview instead of the forbidden gemini-1.5-pro model */
-    aiModelVersion: 'gemini-3-pro-preview'
+    aiModelVersion: 'gemini-3-pro-preview',
+    aiTemperature: 0.7
   },
   features: {
     enableRealTimeSync: false,
@@ -46,7 +56,6 @@ const App: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // Load state from local storage or use defaults
   const [appConfig, setAppConfig] = useState<AppConfig>(() => Storage.get<AppConfig>('appConfig', DEFAULT_CONFIG));
   const [modules, setModules] = useState<Module[]>(() => Storage.get<Module[]>('courseModules', COURSE_MODULES));
   const [events, setEvents] = useState<CalendarEvent[]>(() => Storage.get<CalendarEvent[]>('calendarEvents', MOCK_EVENTS));
@@ -57,6 +66,7 @@ const App: React.FC = () => {
       xp: 0,
       level: 1,
       completedLessonIds: [],
+      completedModuleIds: [],
       submittedHomeworks: [],
       role: 'STUDENT',
       name: 'User',
@@ -74,12 +84,12 @@ const App: React.FC = () => {
           questionsAsked: {},
           notebookEntries: { habits: 0, goals: 0, gratitude: 0 },
           suggestionsMade: 0,
-          webinarsAttended: 0
+          webinarsAttended: 0,
+          skills: { sales: 10, tactics: 10, psychology: 10, discipline: 10 }
       }
     });
   });
 
-  // Persistence Effect
   useEffect(() => {
     setIsSyncing(true);
     Storage.set('progress', userProgress);
@@ -103,6 +113,11 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const calculateTotalXpGained = (base: number, bonus: number, level: number) => {
+    const levelBonus = Math.floor(level * 5); 
+    return base + bonus + levelBonus;
+  };
+
   const handleLogin = (data: any) => {
     const existingUser = allUsers.find(u => u.telegramUsername === data.telegramUsername);
     let newUserState: UserProgress;
@@ -113,7 +128,8 @@ const App: React.FC = () => {
         questionsAsked: {},
         notebookEntries: { habits: 0, goals: 0, gratitude: 0 },
         suggestionsMade: 0,
-        webinarsAttended: 0
+        webinarsAttended: 0,
+        skills: { sales: 20, tactics: 20, psychology: 20, discipline: 50 }
     };
 
     if (existingUser && !data.isRegistration) {
@@ -151,7 +167,7 @@ const App: React.FC = () => {
         return [...prev, newUserState];
     });
 
-    addToast('success', `Добро пожаловать, ${newUserState.name}!`);
+    addToast('success', `Система синхронизирована. Приветствую, ${newUserState.name}.`);
   };
 
   const handleLogout = () => {
@@ -170,28 +186,59 @@ const App: React.FC = () => {
 
   const handleLessonComplete = (lessonId: string, bonusXp: number = 0) => {
     if (userProgress.completedLessonIds.includes(lessonId)) return;
+    
     const lesson = modules.flatMap(m => m.lessons).find(l => l.id === lessonId);
-    if (lesson) {
-      const baseXp = lesson.xpReward; 
-      const totalXp = userProgress.xp + baseXp + bonusXp + 5; 
-      const newLevel = Math.max(userProgress.level, Math.floor(totalXp / 100) + 1);
-      
-      const updates: Partial<UserProgress> = {
-          xp: totalXp,
-          level: newLevel,
-          completedLessonIds: [...userProgress.completedLessonIds, lessonId]
-      };
+    if (!lesson) return;
+    const parentModule = modules.find(m => m.lessons.some(l => l.id === lessonId));
 
-      handleUpdateUser(updates);
-      addToast('success', `Урок пройден! +${baseXp + bonusXp + 5} XP`);
-
-      if (newLevel > userProgress.level) {
-         addToast('info', `ПОВЫШЕНИЕ! Теперь ты Уровень ${newLevel}`);
-         if (userProgress.originalPhotoBase64) {
-             regenerateAvatar(newLevel, userProgress.originalPhotoBase64, userProgress.armorStyle, userProgress.backgroundStyle);
-         }
-      }
+    const totalXpAwarded = calculateTotalXpGained(lesson.xpReward, bonusXp, userProgress.level);
+    const newTotalXp = userProgress.xp + totalXpAwarded;
+    const newLevel = Math.max(userProgress.level, Math.floor(newTotalXp / 100) + 1);
+    
+    const updatedCompletedLessons = [...userProgress.completedLessonIds, lessonId];
+    
+    // Check for Module Completion
+    const newlyCompletedModules: string[] = [];
+    modules.forEach(mod => {
+        if (!userProgress.completedModuleIds.includes(mod.id)) {
+            const allLessonsDone = mod.lessons.every(l => updatedCompletedLessons.includes(l.id));
+            if (allLessonsDone) {
+                newlyCompletedModules.push(mod.id);
+            }
+        }
+    });
+    
+    // Update Skills based on category
+    const currentSkills = { ...userProgress.stats.skills };
+    if (parentModule) {
+        if (parentModule.category === 'SALES') currentSkills.sales += 5;
+        if (parentModule.category === 'TACTICS') currentSkills.tactics += 5;
+        if (parentModule.category === 'PSYCHOLOGY') currentSkills.psychology += 5;
     }
+    currentSkills.discipline += 2; // Every lesson adds discipline
+
+    const updates: Partial<UserProgress> = {
+        xp: newTotalXp,
+        level: newLevel,
+        completedLessonIds: updatedCompletedLessons,
+        completedModuleIds: [...userProgress.completedModuleIds, ...newlyCompletedModules],
+        stats: { ...userProgress.stats, skills: currentSkills }
+    };
+
+    handleUpdateUser(updates);
+    addToast('success', `Миссия выполнена! +${totalXpAwarded} XP`);
+
+    if (newlyCompletedModules.length > 0) {
+        addToast('success', `Модуль полностью пройден!`);
+    }
+
+    if (newLevel > userProgress.level) {
+       addToast('info', `ПОВЫШЕНИЕ! Теперь ты Уровень ${newLevel}`);
+       if (userProgress.originalPhotoBase64) {
+           regenerateAvatar(newLevel, userProgress.originalPhotoBase64, userProgress.armorStyle, userProgress.backgroundStyle);
+       }
+    }
+    
     setSelectedLesson(null);
   };
 
@@ -209,10 +256,10 @@ const App: React.FC = () => {
       let xpAward = 0;
       const stats = { ...userProgress.stats };
       
-      if (type === 'HABIT') { xpAward = 5; stats.notebookEntries.habits++; }
-      if (type === 'GOAL') { xpAward = 10; stats.notebookEntries.goals++; }
-      if (type === 'GRATITUDE') { xpAward = 10; stats.notebookEntries.gratitude++; }
-      if (type === 'SUGGESTION') { xpAward = 50; stats.suggestionsMade++; }
+      if (type === 'HABIT') { xpAward = 5; stats.notebookEntries.habits++; stats.skills.discipline++; }
+      if (type === 'GOAL') { xpAward = 10; stats.notebookEntries.goals++; stats.skills.discipline++; }
+      if (type === 'GRATITUDE') { xpAward = 10; stats.notebookEntries.gratitude++; stats.skills.psychology++; }
+      if (type === 'SUGGESTION') { xpAward = 50; stats.suggestionsMade++; stats.skills.tactics++; }
 
       const newXp = userProgress.xp + xpAward;
       handleUpdateUser({ xp: newXp, stats });
@@ -304,6 +351,7 @@ const App: React.FC = () => {
                     onSelectLesson={setSelectedLesson} 
                     onProfileClick={() => setActiveTab(Tab.PROFILE)}
                     onNotebookAction={handleNotebookAction}
+                    theme={appConfig.theme}
                 />
             )}
             {activeTab === Tab.CHAT && <ChatAssistant history={userProgress.chatHistory} onUpdateHistory={(h) => handleUpdateUser({chatHistory: h})} systemInstruction={appConfig.systemInstruction} />}
@@ -323,6 +371,7 @@ const App: React.FC = () => {
                     onReferral={handleReferral}
                     onShareStory={handleShareStory}
                     isSettingsOpen={isSettingsOpen}
+                    theme={appConfig.theme}
                 />
             )}
             {activeTab === Tab.CURATOR_DASHBOARD && userProgress.role === 'CURATOR' && <CuratorDashboard />}
