@@ -311,12 +311,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, existingUsers = [] }) => {
 
            {/* Console Log Simulation */}
            <div className="bg-black/40 rounded-xl p-4 font-mono text-[10px] text-slate-400 h-32 overflow-hidden border border-white/5 flex flex-col justify-end">
-               <p className="opacity-50">> Establishing secure connection...</p>
-               <p className="opacity-60">> Handshake verified.</p>
-               {syncProgress > 30 && <p className="opacity-70 text-green-500">> Neural link active.</p>}
-               {syncProgress > 60 && <p className="opacity-80 text-[#00CEFF]">> Downloading mission data...</p>}
-               {syncProgress > 80 && <p className="opacity-90">> Synchronizing preferences...</p>}
-               <p className="animate-pulse">> _</p>
+               <p className="opacity-50">&gt; Establishing secure connection...</p>
+               <p className="opacity-60">&gt; Handshake verified.</p>
+               {syncProgress > 30 && <p className="opacity-70 text-green-500">&gt; Neural link active.</p>}
+               {syncProgress > 60 && <p className="opacity-80 text-[#00CEFF]">&gt; Downloading mission data...</p>}
+               {syncProgress > 80 && <p className="opacity-90">&gt; Synchronizing preferences...</p>}
+               <p className="animate-pulse">&gt; _</p>
            </div>
       </div>
   );
