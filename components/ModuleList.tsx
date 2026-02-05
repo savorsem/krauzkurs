@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Module, UserProgress, Lesson, ModuleCategory, ThemeConfig } from '../types';
 import { Notebook } from './Notebook';
@@ -24,12 +23,9 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
   const accent = theme?.accentColor || '#D4AF37';
   const radius = theme?.borderRadius === 'SHARP' ? '0.5rem' : '2.5rem';
 
-  // Parallax scroll tracker
   useEffect(() => {
     const handleScroll = () => {
-      requestAnimationFrame(() => {
-        setScrollPos(window.scrollY);
-      });
+      setScrollPos(window.scrollY);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -57,7 +53,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
 
   const xpProgress = userProgress.xp % 100; 
 
-  // --- DYNAMIC VISUALS FACTORY ---
+  // Visual helper for categories
   const getModuleVisuals = (category: ModuleCategory) => {
     switch(category) {
       case 'SALES': return {
@@ -68,18 +64,16 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
           watermarkColor: 'text-blue-500',
           accentColor: 'text-blue-400',
           barColor: 'bg-blue-500',
-          glareColor: 'bg-blue-400',
           pattern: (
             <div className="absolute inset-0 opacity-[0.07] pointer-events-none group-hover:scale-110 transition-transform duration-700">
                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <pattern id="sales_pattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                             <circle cx="2" cy="2" r="1.5" className="fill-blue-400" />
+                             <circle cx="1" cy="1" r="1" className="fill-blue-400" />
                         </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#sales_pattern)" />
                 </svg>
-                {/* Floating Glow Orb */}
                 <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-blue-600 rounded-full blur-[80px] opacity-20 animate-pulse-slow"></div>
             </div>
           )
@@ -92,7 +86,6 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
           watermarkColor: 'text-purple-500',
           accentColor: 'text-purple-400',
           barColor: 'bg-purple-500',
-          glareColor: 'bg-purple-400',
           pattern: (
             <div className="absolute inset-0 opacity-[0.07] pointer-events-none group-hover:rotate-3 transition-transform duration-700">
                  <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -111,11 +104,10 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
           watermarkColor: 'text-red-500',
           accentColor: 'text-red-400',
           barColor: 'bg-red-500',
-          glareColor: 'bg-red-400',
           pattern: (
             <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-                 <div className="absolute top-0 right-0 w-full h-full" style={{ backgroundImage: 'linear-gradient(45deg, transparent 48%, rgba(239, 68, 68, 0.3) 50%, transparent 52%)', backgroundSize: '20px 20px' }}></div>
-                 <div className="absolute top-10 right-10 w-32 h-32 border-4 border-dashed border-red-500/20 rounded-full animate-spin-slow duration-[20s]"></div>
+                 <div className="absolute top-0 right-0 w-full h-full" style={{ backgroundImage: 'linear-gradient(45deg, transparent 48%, rgba(239, 68, 68, 0.3) 50%, transparent 52%)', backgroundSize: '10px 10px' }}></div>
+                 <div className="absolute top-10 right-10 w-32 h-32 border-4 border-red-500/20 rounded-full blur-sm group-hover:scale-125 transition-transform duration-500"></div>
             </div>
           )
       };
@@ -127,7 +119,6 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
           watermarkColor: 'text-[#D4AF37]',
           accentColor: 'text-[#D4AF37]',
           barColor: 'bg-[#D4AF37]',
-          glareColor: 'bg-[#D4AF37]',
           pattern: (
              <div className="absolute inset-0 opacity-[0.05] pointer-events-none group-hover:scale-105 transition-transform duration-1000">
                  <svg width="100%" height="100%">
@@ -173,7 +164,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
           {/* XP Progress Bar */}
           <div className="mb-8">
               <div className="flex justify-between items-end mb-2">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Опыт до уровня {userProgress.level + 1}</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Опыт</span>
                   <span className="text-sm font-black text-white">{userProgress.xp} <span className="text-[#D4AF37]">XP</span></span>
               </div>
               <div className="h-3 w-full bg-[#1F2128]/60 rounded-full overflow-hidden border border-white/5 relative backdrop-blur-sm">
@@ -220,11 +211,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                 const isLocked = !isCompleted && (userProgress.level < module.minLevel || missingPrereqs.length > 0);
                 
                 const visuals = getModuleVisuals(module.category);
-                
-                // Parallax calculation
-                // Only move background if module is somewhat in view to save performance
-                // Offset calculation: (scrollPos * speed)
-                const parallaxY = (scrollPos * 0.15); 
+                const parallaxY = (scrollPos * (0.05 + idx * 0.01));
 
                 return (
                     <div 
@@ -238,7 +225,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                         onMouseEnter={() => setHoveredModuleId(module.id)}
                         onMouseLeave={() => setHoveredModuleId(null)}
                         className={`
-                            relative w-full min-h-[260px] flex flex-col justify-end p-6 overflow-hidden transition-all duration-500 group rounded-[2.5rem] border backdrop-blur-md
+                            relative w-full min-h-[240px] flex flex-col justify-end p-6 overflow-hidden transition-all duration-500 group rounded-[2.5rem] border backdrop-blur-md
                             ${isLocked 
                                 ? 'opacity-80 grayscale filter brightness-50 cursor-not-allowed border-white/5 bg-[#1F2128]/80' 
                                 : `cursor-pointer hover:scale-[1.02] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] ${visuals.border} ${visuals.shadow} bg-[#1F2128]/80`
@@ -246,33 +233,28 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                         `}
                         style={{ borderRadius: radius }}
                     >
-                        {/* Parallax Background Image */}
+                        {/* Dynamic Background Image with Mix Blend */}
                         <div 
-                            className="absolute inset-0 bg-cover bg-center transition-transform duration-100 opacity-40 mix-blend-overlay"
+                            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 opacity-30 mix-blend-overlay"
                             style={{ 
                                 backgroundImage: `url(${module.imageUrl})`,
-                                // Apply parallax + hover zoom
-                                transform: `translateY(${parallaxY}px) scale(${hoveredModuleId === module.id ? 1.15 : 1.1})`
+                                transform: `scale(1.1) translateY(${parallaxY * 0.2}px)`
                             }}
                         ></div>
                         
-                        {/* Category Specific Pattern (SVG) */}
+                        {/* Category Specific Pattern */}
                         {visuals.pattern}
                         
                         {/* Gradient Overlay */}
                         <div className={`absolute inset-0 bg-gradient-to-t ${visuals.gradient} transition-opacity duration-500`}></div>
 
-                        {/* Glare Effect on Hover */}
-                        <div className={`absolute top-0 -left-[100%] w-[50%] h-full transform skew-x-[-25deg] ${visuals.glareColor} opacity-20 group-hover:animate-glare pointer-events-none blur-xl`}></div>
-
-                        {/* Category Watermark Icon (Top Right) */}
-                        <div className={`absolute -right-6 -top-6 text-9xl opacity-[0.05] group-hover:opacity-[0.15] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 ${visuals.watermarkColor}`}>
+                        {/* Category Watermark Icon */}
+                        <div className={`absolute -right-4 -top-4 text-9xl opacity-[0.05] group-hover:opacity-[0.15] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 ${visuals.watermarkColor}`}>
                             {visuals.icon}
                         </div>
 
                         {/* Content */}
                         <div className="relative z-20">
-                            {/* Badges */}
                             <div className="flex justify-between items-end mb-3">
                                 <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest backdrop-blur-md border border-white/20 shadow-lg flex items-center gap-2
                                     ${isCompleted ? 'bg-[#00B050] text-white' : 'bg-white/10 text-white'}
@@ -284,7 +266,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                                     )}
                                 </span>
                                 {module.videoUrl && (
-                                     <span className="px-2 py-1.5 bg-black/50 rounded-lg text-white/80 border border-white/10 backdrop-blur-sm animate-pulse-slow">
+                                     <span className="px-2 py-1.5 bg-black/50 rounded-lg text-white/80 border border-white/10 backdrop-blur-sm">
                                          🎥
                                      </span>
                                 )}
@@ -300,8 +282,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                                 )}
                             </div>
 
-                            {/* Title & Desc */}
-                            <h3 className="text-3xl font-black text-white leading-[0.9] mb-3 drop-shadow-xl tracking-tight group-hover:translate-x-1 transition-transform duration-300">
+                            <h3 className="text-3xl font-black text-white leading-[0.9] mb-3 drop-shadow-xl tracking-tight group-hover:translate-x-2 transition-transform duration-300">
                                 {module.title.split(':').map((part, i) => (
                                     <span key={i} className={i === 0 ? `block text-lg mb-1 font-bold opacity-80 ${visuals.accentColor}` : "block"}>{part}</span>
                                 ))}
@@ -334,24 +315,13 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
 
                         {/* Lock Overlay Detail */}
                         {isLocked && (
-                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-[4px] z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[4px] z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                  <div className="text-5xl mb-4 animate-bounce">🔒</div>
                                  <div className="text-xs font-black uppercase tracking-widest text-red-400 border border-red-400/50 px-6 py-3 rounded-2xl bg-black/80 shadow-2xl">
                                      {missingPrereqs.length > 0 ? "ТРЕБУЕТСЯ ПРЕДЫДУЩИЙ МОДУЛЬ" : `ДОСТУП С УРОВНЯ ${module.minLevel}`}
                                  </div>
                              </div>
                         )}
-                        
-                        <style>{`
-                            @keyframes glare {
-                                0% { left: -100%; opacity: 0; }
-                                50% { opacity: 0.3; }
-                                100% { left: 200%; opacity: 0; }
-                            }
-                            .animate-glare {
-                                animation: glare 1.5s ease-in-out forwards;
-                            }
-                        `}</style>
                     </div>
                 );
             })

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AppConfig, Module, UserProgress, CalendarEvent, Lesson, EventType, ModuleCategory, UserRole, AdminTab } from '../types';
 import { Button } from './Button';
