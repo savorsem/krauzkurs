@@ -75,6 +75,7 @@ export interface UserProgress {
   role: UserRole;
   isAuthenticated: boolean;
   registrationDate?: string;
+  isBanned?: boolean; // New field
   
   xp: number;
   level: number;
@@ -93,9 +94,11 @@ export interface UserProgress {
 }
 
 export interface ThemeConfig {
-    cardStyle: 'GLASS' | 'SOLID' | 'NEON';
-    borderRadius: 'ROUNDED' | 'SHARP';
+    cardStyle: 'GLASS' | 'SOLID' | 'NEON' | 'MINIMAL';
+    borderRadius: 'ROUNDED' | 'SHARP' | 'CIRCLE';
     accentColor: string;
+    fontFamily?: string;
+    bgStyle: 'LIVE_DARK' | 'STATIC_DARK' | 'DEEP_SPACE';
 }
 
 export interface DatabaseConfig {

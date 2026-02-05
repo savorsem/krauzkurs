@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Module, UserProgress, Lesson, ModuleCategory, ThemeConfig } from '../types';
 import { Notebook } from './Notebook';
 import { AnimatedCounter } from './AnimatedCounter';
@@ -24,7 +24,6 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
   const accent = theme?.accentColor || '#D4AF37';
   const radius = theme?.borderRadius === 'SHARP' ? '0.5rem' : '2.5rem';
 
-  // Scroll listener for parallax
   useEffect(() => {
     const handleScroll = () => {
       setScrollPos(window.scrollY);
@@ -42,7 +41,6 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
   ];
 
   const filteredModules = useMemo(() => {
-      // Admin sees everything, students don't see hidden modules unless they completed them
       let filtered = modules;
       if (userProgress.role !== 'ADMIN') {
           filtered = filtered.filter(m => !m.isHidden || userProgress.completedModuleIds.includes(m.id));
@@ -56,31 +54,83 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
 
   const xpProgress = userProgress.xp % 100; 
 
+  // Visual helper for categories
   const getModuleVisuals = (category: ModuleCategory) => {
     switch(category) {
       case 'SALES': return {
-          gradient: 'from-blue-600/40 to-[#1F2128]/90',
+          gradient: 'from-blue-900/90 to-[#1F2128]',
           border: 'border-blue-500/30',
+          shadow: 'shadow-blue-500/20',
           icon: '💰',
-          watermarkColor: 'text-blue-500'
+          watermarkColor: 'text-blue-500',
+          accentColor: 'text-blue-400',
+          barColor: 'bg-blue-500',
+          pattern: (
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="sales_pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                             <circle cx="1" cy="1" r="1" className="fill-blue-400" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#sales_pattern)" />
+                </svg>
+                <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-blue-600 rounded-full blur-[80px] opacity-20 animate-pulse-slow"></div>
+            </div>
+          )
       };
       case 'PSYCHOLOGY': return {
-          gradient: 'from-purple-600/40 to-[#1F2128]/90',
+          gradient: 'from-purple-900/90 to-[#1F2128]',
           border: 'border-purple-500/30',
+          shadow: 'shadow-purple-500/20',
           icon: '🧠',
-          watermarkColor: 'text-purple-500'
+          watermarkColor: 'text-purple-500',
+          accentColor: 'text-purple-400',
+          barColor: 'bg-purple-500',
+          pattern: (
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none group-hover:rotate-3 transition-transform duration-700">
+                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                     <path d="M0,50 Q50,0 100,50 T200,50" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-500 opacity-20" />
+                     <path d="M0,150 Q50,100 100,150 T200,150" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-500 opacity-20" />
+                 </svg>
+                 <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-purple-600 rounded-full blur-[80px] opacity-20 animate-pulse-slow delay-700"></div>
+            </div>
+          )
       };
       case 'TACTICS': return {
-          gradient: 'from-red-600/40 to-[#1F2128]/90',
+          gradient: 'from-red-900/90 to-[#1F2128]',
           border: 'border-red-500/30',
+          shadow: 'shadow-red-500/20',
           icon: '⚔️',
-          watermarkColor: 'text-red-500'
+          watermarkColor: 'text-red-500',
+          accentColor: 'text-red-400',
+          barColor: 'bg-red-500',
+          pattern: (
+            <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+                 <div className="absolute top-0 right-0 w-full h-full" style={{ backgroundImage: 'linear-gradient(45deg, transparent 48%, rgba(239, 68, 68, 0.3) 50%, transparent 52%)', backgroundSize: '10px 10px' }}></div>
+                 <div className="absolute top-10 right-10 w-32 h-32 border-4 border-red-500/20 rounded-full blur-sm group-hover:scale-125 transition-transform duration-500"></div>
+            </div>
+          )
       };
-      default: return {
-          gradient: 'from-[#D4AF37]/40 to-[#1F2128]/90',
+      default: return { // GENERAL
+          gradient: 'from-yellow-900/90 to-[#1F2128]',
           border: 'border-[#D4AF37]/30',
+          shadow: 'shadow-[#D4AF37]/20',
           icon: '🛡️',
-          watermarkColor: 'text-[#D4AF37]'
+          watermarkColor: 'text-[#D4AF37]',
+          accentColor: 'text-[#D4AF37]',
+          barColor: 'bg-[#D4AF37]',
+          pattern: (
+             <div className="absolute inset-0 opacity-[0.05] pointer-events-none group-hover:scale-105 transition-transform duration-1000">
+                 <svg width="100%" height="100%">
+                    <pattern id="hexagons" width="50" height="43.4" patternUnits="userSpaceOnUse" patternTransform="scale(2)">
+                      <path d="M25 0 L50 14.4 L50 43.3 L25 57.7 L0 43.3 L0 14.4 Z" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#D4AF37]"/>
+                    </pattern>
+                    <rect width="100%" height="100%" fill="url(#hexagons)" />
+                 </svg>
+                 <div className="absolute inset-0 bg-gradient-to-t from-[#D4AF37]/10 to-transparent"></div>
+             </div>
+          )
       };
     }
   };
@@ -148,17 +198,16 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
       </div>
 
       {/* MODULE LIST */}
-      <div className="px-6 space-y-8 relative z-10 min-h-[500px]">
+      <div className="px-6 space-y-6 relative z-10 min-h-[500px]">
         {activeCategory === 'NOTEBOOK' ? (
             <Notebook onAction={onNotebookAction} />
         ) : (
             filteredModules.map((module, idx) => {
                 const completedCount = module.lessons.filter(l => userProgress.completedLessonIds.includes(l.id)).length;
                 const totalCount = module.lessons.length;
-                const progressPercentage = Math.round((completedCount / totalCount) * 100);
+                const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
                 
                 const isCompleted = userProgress.completedModuleIds.includes(module.id);
-                // Unlock visual improvement: if not completed but met prereqs, it's open.
                 const missingPrereqs = module.prerequisites.filter(pid => !userProgress.completedModuleIds.includes(pid));
                 const isLocked = !isCompleted && (userProgress.level < module.minLevel || missingPrereqs.length > 0);
                 
@@ -177,28 +226,31 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                         onMouseEnter={() => setHoveredModuleId(module.id)}
                         onMouseLeave={() => setHoveredModuleId(null)}
                         className={`
-                            relative w-full min-h-[220px] flex flex-col justify-end p-6 overflow-hidden shadow-2xl transition-all duration-500 group rounded-[2.5rem] border backdrop-blur-md
+                            relative w-full min-h-[240px] flex flex-col justify-end p-6 overflow-hidden transition-all duration-500 group rounded-[2.5rem] border backdrop-blur-md
                             ${isLocked 
                                 ? 'opacity-80 grayscale filter brightness-50 cursor-not-allowed border-white/5 bg-[#1F2128]/80' 
-                                : `cursor-pointer hover:scale-[1.02] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] ${visuals.border} bg-[#1F2128]/60`
+                                : `cursor-pointer hover:scale-[1.02] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] ${visuals.border} ${visuals.shadow} bg-[#1F2128]/80`
                             }
                         `}
                         style={{ borderRadius: radius }}
                     >
-                        {/* Dynamic Background Image */}
+                        {/* Dynamic Background Image with Mix Blend */}
                         <div 
-                            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-60"
+                            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 opacity-30 mix-blend-overlay"
                             style={{ 
                                 backgroundImage: `url(${module.imageUrl})`,
                                 transform: `scale(1.1) translateY(${parallaxY * 0.2}px)`
                             }}
                         ></div>
                         
+                        {/* Category Specific Pattern */}
+                        {visuals.pattern}
+                        
                         {/* Gradient Overlay */}
-                        <div className={`absolute inset-0 bg-gradient-to-t ${visuals.gradient} transition-opacity`}></div>
+                        <div className={`absolute inset-0 bg-gradient-to-t ${visuals.gradient} transition-opacity duration-500`}></div>
 
                         {/* Category Watermark Icon */}
-                        <div className={`absolute -right-4 -top-4 text-9xl opacity-[0.05] group-hover:opacity-[0.15] group-hover:scale-110 transition-all duration-500 rotate-12 ${visuals.watermarkColor}`}>
+                        <div className={`absolute -right-4 -top-4 text-9xl opacity-[0.05] group-hover:opacity-[0.15] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 ${visuals.watermarkColor}`}>
                             {visuals.icon}
                         </div>
 
@@ -231,27 +283,34 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                                 )}
                             </div>
 
-                            <h3 className="text-3xl font-black text-white leading-[0.9] mb-3 drop-shadow-xl tracking-tight group-hover:translate-x-1 transition-transform duration-300">
+                            <h3 className="text-3xl font-black text-white leading-[0.9] mb-3 drop-shadow-xl tracking-tight group-hover:translate-x-2 transition-transform duration-300">
                                 {module.title.split(':').map((part, i) => (
-                                    <span key={i} className={i === 0 ? "block text-lg text-white/70 mb-1 font-bold" : "block"}>{part}</span>
+                                    <span key={i} className={i === 0 ? `block text-lg mb-1 font-bold opacity-80 ${visuals.accentColor}` : "block"}>{part}</span>
                                 ))}
                             </h3>
                             
-                            <p className="text-sm font-medium text-slate-300 line-clamp-2 max-w-[90%] drop-shadow-md mb-4 group-hover:text-white transition-colors">
+                            <p className="text-sm font-medium text-slate-300 line-clamp-2 max-w-[95%] drop-shadow-md mb-5 group-hover:text-white transition-colors">
                                 {module.description}
                             </p>
 
                             {/* Enhanced Progress Bar */}
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1 h-2 bg-black/40 rounded-full overflow-hidden border border-white/5 backdrop-blur-sm">
+                            <div className="mt-auto">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className={`text-[9px] font-bold uppercase tracking-widest opacity-80 ${visuals.accentColor}`}>
+                                        Прогресс
+                                    </span>
+                                    <span className="text-[10px] font-black text-white">
+                                        {progressPercentage}%
+                                    </span>
+                                </div>
+                                <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5 backdrop-blur-sm">
                                     <div 
-                                        className={`h-full transition-all duration-1000 relative ${isCompleted ? 'bg-[#00B050]' : `bg-white`}`} 
+                                        className={`h-full transition-all duration-1000 relative ${visuals.barColor} shadow-[0_0_10px_currentColor]`} 
                                         style={{ width: `${progressPercentage}%` }}
                                     >
                                         <div className="absolute top-0 right-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
                                     </div>
                                 </div>
-                                <span className="text-[10px] font-black text-white/80 w-8 text-right">{progressPercentage}%</span>
                             </div>
                         </div>
 

@@ -24,7 +24,8 @@ const DEFAULT_CONFIG: AppConfig = {
   theme: {
       cardStyle: 'GLASS',
       borderRadius: 'ROUNDED',
-      accentColor: '#D4AF37'
+      accentColor: '#D4AF37',
+      bgStyle: 'LIVE_DARK'
   },
   database: {
       syncEnabled: true,
@@ -90,6 +91,31 @@ const App: React.FC = () => {
     });
   });
 
+  // --- DYNAMIC THEME INJECTION ---
+  useEffect(() => {
+    const root = document.documentElement;
+    const { theme } = appConfig;
+    
+    // Inject accent color
+    root.style.setProperty('--color-accent', theme.accentColor);
+    
+    // Inject Border Radius
+    let radiusValue = '2.5rem';
+    if (theme.borderRadius === 'SHARP') radiusValue = '0.5rem';
+    if (theme.borderRadius === 'CIRCLE') radiusValue = '9999px';
+    root.style.setProperty('--radius-main', radiusValue);
+
+    // Card Styles (CSS Classes logic handled in components, but we can set global vars)
+    if (theme.cardStyle === 'NEON') {
+       root.style.setProperty('--card-border', `1px solid ${theme.accentColor}`);
+       root.style.setProperty('--card-shadow', `0 0 15px ${theme.accentColor}40`);
+    } else {
+       root.style.setProperty('--card-border', '1px solid rgba(255,255,255,0.05)');
+       root.style.setProperty('--card-shadow', '0 8px 32px rgba(0,0,0,0.3)');
+    }
+
+  }, [appConfig.theme]);
+
   useEffect(() => {
     setIsSyncing(true);
     Storage.set('progress', userProgress);
@@ -133,6 +159,10 @@ const App: React.FC = () => {
     };
 
     if (existingUser && !data.isRegistration) {
+        if (existingUser.isBanned) {
+            addToast('error', 'Доступ запрещен. Аккаунт заблокирован командованием.');
+            return;
+        }
         newUserState = {
             ...existingUser,
             isAuthenticated: true,
@@ -316,7 +346,7 @@ const App: React.FC = () => {
   const currentParentModule = selectedLesson ? modules.find(m => m.lessons.some(l => l.id === selectedLesson.id)) : undefined;
 
   return (
-    <div className="min-h-screen w-full relative bg-[#0F1115]">
+    <div className="min-h-screen w-full relative bg-[#0F1115] transition-colors duration-500">
        <div className="toast-container">
            {toasts.map(toast => (
                <Toast key={toast.id} toast={toast} onRemove={removeToast} />
@@ -332,7 +362,7 @@ const App: React.FC = () => {
           </div>
        )}
 
-      <main className="relative z-10 max-w-lg mx-auto md:max-w-2xl min-h-screen shadow-2xl overflow-hidden bg-[#0F1115]">
+      <main className="relative z-10 max-w-lg mx-auto md:max-w-4xl min-h-screen shadow-2xl overflow-hidden bg-[#0F1115] transition-colors duration-500">
         {selectedLesson ? (
           <LessonView 
             lesson={selectedLesson} 
