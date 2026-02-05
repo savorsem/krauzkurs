@@ -56,6 +56,8 @@ const App: React.FC = () => {
   const [avatarRegenerating, setAvatarRegenerating] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // State for editing a module from the list
   const [moduleToEdit, setModuleToEdit] = useState<Module | null>(null);
   
   // Initialize state once from Storage
