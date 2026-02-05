@@ -1,5 +1,4 @@
-
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 // Define the shape of props for the ErrorBoundary component
 interface ErrorBoundaryProps {
@@ -16,10 +15,10 @@ interface ErrorBoundaryState {
  * ErrorBoundary component to catch JavaScript errors anywhere in their child component tree,
  * log those errors, and display a fallback UI instead of the component tree that crashed.
  */
-// Fix: Explicitly extend React.Component to resolve missing state/props property errors and ensure children are correctly handled in React 18+
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Explicitly define and initialize state property to resolve "Property 'state' does not exist" errors
-  public override state: ErrorBoundaryState = {
+// Fix: Explicitly extend Component imported from 'react' to resolve base class detection and 'props'/'state' property errors.
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix: Removed 'override' keyword which was causing compilation errors as TypeScript sometimes fails to detect React.Component as a class with overridable properties in certain environments.
+  public state: ErrorBoundaryState = {
     hasError: false,
     error: null
   };
@@ -29,13 +28,15 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true, error };
   }
 
-  public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  // Fix: Removed 'override' keyword as it is not needed for React lifecycle methods in standard TypeScript configurations and was causing detection issues.
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can also log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  public override render() {
-    /* Fix: Using this.state correctly within React.Component scope */
+  // Fix: Removed 'override' keyword and ensured proper inheritance from Component to resolve "Property 'props' does not exist" errors.
+  public render() {
+    /* Using this.state correctly within Component scope */
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
@@ -58,7 +59,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
-    /* Fix: Correctly returning children from props. Props are inherited from React.Component. */
+    /* Correctly returning children from props. Props are inherited from Component. */
     return this.props.children;
   }
 }

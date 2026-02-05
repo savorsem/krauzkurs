@@ -138,6 +138,24 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   const diffConfig = getDifficultyConfig(lesson.difficulty);
 
+  const FeedbackRatingUI = () => (
+    <div className="flex items-center gap-3 justify-end mt-4">
+        <span className="text-[10px] font-bold text-slate-500 uppercase">Оценка корректна?</span>
+        <button 
+            onClick={() => handleRateFeedback('LIKE')}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${userRating === 'LIKE' ? 'bg-green-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+        >
+            👍
+        </button>
+        <button 
+            onClick={() => handleRateFeedback('DISLIKE')}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${userRating === 'DISLIKE' ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+        >
+            👎
+        </button>
+    </div>
+  );
+
   return (
     <div className="flex flex-col min-h-screen pb-32 w-full animate-slide-in relative pt-12 text-white">
       <div className="px-5">
@@ -224,21 +242,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                             <div className="p-4 bg-white/5 rounded-2xl text-sm italic border-l-4 border-[#D4AF37] mb-2">
                                 {feedback}
                             </div>
-                            <div className="flex items-center gap-3 justify-end">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase">Оценка корректна?</span>
-                                <button 
-                                    onClick={() => handleRateFeedback('LIKE')}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${userRating === 'LIKE' ? 'bg-green-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
-                                >
-                                    👍
-                                </button>
-                                <button 
-                                    onClick={() => handleRateFeedback('DISLIKE')}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${userRating === 'DISLIKE' ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
-                                >
-                                    👎
-                                </button>
-                            </div>
+                            <FeedbackRatingUI />
                         </div>
                     )}
 
@@ -252,7 +256,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <div className="text-center p-8 bg-[#00B050]/10 border border-[#00B050]/20 rounded-[2.5rem] animate-scale-in backdrop-blur-md">
                 <div className="text-4xl mb-3 animate-bounce">🛡️</div>
                 <h3 className="text-xl font-black text-[#00B050] uppercase tracking-widest">МИССИЯ ВЫПОЛНЕНА</h3>
-                {feedback && <div className="mt-4 p-4 bg-black/20 rounded-xl text-slate-300 text-sm italic border border-[#00B050]/10">"{feedback}"</div>}
+                {feedback && (
+                  <div className="mt-4">
+                    <div className="p-4 bg-black/20 rounded-xl text-slate-300 text-sm italic border border-[#00B050]/10">"{feedback}"</div>
+                    <FeedbackRatingUI />
+                  </div>
+                )}
             </div>
         )}
       </div>
