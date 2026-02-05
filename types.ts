@@ -148,6 +148,7 @@ export interface CalendarEvent {
 
 export enum Tab {
   MODULES = 'MODULES',
+  CURRICULUM = 'CURRICULUM',
   CHAT = 'CHAT',
   PROFILE = 'PROFILE',
   CALENDAR = 'CALENDAR',

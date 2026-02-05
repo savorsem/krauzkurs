@@ -46,7 +46,6 @@ export const SmartNav: React.FC<SmartNavProps> = ({
         setIsVisible(true);
       } else {
         // Hide on scroll down, show on scroll up
-        // Added a small threshold (10px) to prevent flickering on small movements
         if (Math.abs(currentScrollY - lastScrollY) > 10) {
             setIsVisible(currentScrollY < lastScrollY);
         }
@@ -161,11 +160,12 @@ export const SmartNav: React.FC<SmartNavProps> = ({
   const renderDefaultMode = () => {
     const navItems = [
         { tab: Tab.MODULES, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" /><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" /></svg>, label: 'БАЗА' },
+        { tab: Tab.CURRICULUM, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533zM12.75 20.636A8.214 8.214 0 0118 18.75c1.11 0 2.152.22 3.102.617a.75.75 0 001-.707V4.392a.75.75 0 00-.5-.707 9.742 9.742 0 00-3.25-.555 9.707 9.707 0 00-5.25 1.533v16.003z" /></svg>, label: 'ПЛАН' },
         { tab: Tab.CHAT, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 01-1.112-1.083zM12.643 11.43a.75.75 0 00-1.286 0l-1.5 3a.75.75 0 001.176.93L12 14.229l.967 1.132a.75.75 0 001.176-.93l-1.5-3z" clipRule="evenodd" /></svg>, label: 'ШТАБ' },
         { tab: Tab.PROFILE, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" /></svg>, label: 'ДОСЬЕ' },
     ];
 
-    if (role === 'CURATOR') navItems.splice(2, 0, { tab: Tab.CURATOR_DASHBOARD, icon: <span>✓</span>, label: 'ПРОВЕРКА' });
+    if (role === 'CURATOR') navItems.splice(3, 0, { tab: Tab.CURATOR_DASHBOARD, icon: <span>✓</span>, label: 'ПРОВЕРКА' });
     if (role === 'ADMIN') navItems.push({ tab: Tab.ADMIN_DASHBOARD, icon: <span>⚙️</span>, label: 'ПУЛЬТ' });
 
     return (
@@ -178,13 +178,11 @@ export const SmartNav: React.FC<SmartNavProps> = ({
                         onClick={() => { setActiveTab(item.tab); }}
                         className={`relative flex flex-col items-center justify-center transition-all duration-300 w-16 h-14 rounded-2xl group active:scale-90`}
                     >
-                        {/* Glow effect for active tab */}
                         {isActive && (
                             <div className="absolute inset-0 bg-gradient-to-t from-[#00CEFF]/10 to-transparent rounded-2xl animate-fade-in pointer-events-none"></div>
                         )}
 
                         <div className={`transition-all duration-300 relative z-10 ${isActive ? 'text-[#00CEFF] -translate-y-1' : 'text-slate-500 group-hover:text-slate-300'}`}>
-                            {/* Icon with drop shadow on active */}
                             <div className={isActive ? 'filter drop-shadow-[0_0_8px_rgba(0,206,255,0.6)]' : ''}>
                                 {item.icon}
                             </div>
@@ -194,7 +192,6 @@ export const SmartNav: React.FC<SmartNavProps> = ({
                             {item.label}
                         </span>
                         
-                        {/* Active Indicator Dot */}
                         <div className={`absolute bottom-1 w-1 h-1 bg-[#00CEFF] rounded-full shadow-[0_0_8px_#00CEFF] transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></div>
                     </button>
                 );

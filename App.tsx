@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tab, UserProgress, Lesson, AppConfig, Module, CalendarEvent, AdminTab } from './types';
 import { COURSE_MODULES, MOCK_EVENTS } from './constants';
@@ -10,6 +11,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { CalendarView } from './components/CalendarView';
 import { Auth } from './components/Auth';
 import { SmartNav } from './components/SmartNav';
+import { CourseOverview } from './components/CourseOverview';
 import { generateSpartanAvatar } from './services/geminiService';
 import { Storage } from './services/storage';
 import { telegram } from './services/telegramService';
@@ -381,6 +383,13 @@ const App: React.FC = () => {
                     onProfileClick={() => setActiveTab(Tab.PROFILE)}
                     onNotebookAction={handleNotebookAction}
                     theme={appConfig.theme}
+                />
+            )}
+            {activeTab === Tab.CURRICULUM && (
+                <CourseOverview 
+                    modules={modules} 
+                    userProgress={userProgress} 
+                    onSelectLesson={setSelectedLesson} 
                 />
             )}
             {activeTab === Tab.CHAT && <ChatAssistant history={userProgress.chatHistory} onUpdateHistory={(h) => handleUpdateUser({chatHistory: h})} systemInstruction={appConfig.systemInstruction} />}
