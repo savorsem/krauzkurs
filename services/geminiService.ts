@@ -192,6 +192,9 @@ const BACKGROUND_DESCRIPTIONS: Record<string, string> = {
     'Temple of Olympus': 'Ethereal mountaintop temple, white marble columns in background, bright blue sky with soft clouds, divine bright lighting, bloom effect.',
     'Stormy Peak': 'Dark, moody mountain peak, rain pouring down, lightning striking in the distance, cold blue and grey color palette, dramatic contrast.',
     'Volcanic Gates': 'Underground cavern, flowing lava rivers in background, dark rock, ambient orange and red lighting, embers floating in the air.',
+    'Sci-Fi Command Center': 'Futuristic high-tech command center, holographic screens displaying tactical data, sleek metal walls, cool blue and cyan lighting.',
+    'Training Grounds': 'Spartan training arena, sand pit, wooden practice weapons in rack, bright midday sun, harsh shadows, disciplined atmosphere.',
+    'Nebula Vista': 'Cosmic background with swirling purple and blue nebula clouds, stars, ethereal lighting, sense of infinite scale and mystery.',
 };
 
 export const generateSpartanAvatar = async (
@@ -211,6 +214,14 @@ export const generateSpartanAvatar = async (
     const armorQuality = level < 3 ? 'Basic Recruit condition (clean, simple)' : level < 7 ? 'Battle-Hardened Veteran condition (scratches, dents, mud splatter)' : 'Legendary Commander condition (Ornate details, glowing energy)';
     const auraPrompt = level > 5 ? 'Subtle supernatural power aura surrounding the character.' : 'No supernatural aura.';
 
+    // Dynamic background intensity based on level
+    let envIntensity = 'Realistic environment details.';
+    if (level >= 5 && level < 10) {
+        envIntensity = 'Heightened atmospheric effects (dramatic fog, sparks, or dynamic lighting bloom).';
+    } else if (level >= 10) {
+        envIntensity = 'Legendary environment status. Divine rays of light, floating energy particles, surreal and epic cinematic composition.';
+    }
+
     const prompt = `
       Task: Generate a high-fidelity 3D avatar portrait (Unreal Engine 5 Metahuman style mixed with Pixar quality).
       
@@ -222,7 +233,8 @@ export const generateSpartanAvatar = async (
       - Special Effect: ${auraPrompt}
       
       ENVIRONMENT / BACKGROUND:
-      - ${bgPrompt}
+      - Setting: ${bgPrompt}
+      - Visual Intensity Level: ${envIntensity}
       - Camera: Close-up portrait (Head and Upper Torso), shallow depth of field (bokeh background).
       - Lighting: Cinematic, Volumetric lighting matching the background environment.
 

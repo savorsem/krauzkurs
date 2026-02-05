@@ -8,6 +8,7 @@ import { Profile } from './components/Profile';
 import { LessonView } from './components/LessonView';
 import { CuratorDashboard } from './components/CuratorDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
+import { CalendarView } from './components/CalendarView';
 import { Auth } from './components/Auth';
 import { SmartNav } from './components/SmartNav';
 import { generateSpartanAvatar } from './services/geminiService';
@@ -24,7 +25,8 @@ const DEFAULT_CONFIG: AppConfig = {
     telegramBotToken: '',
     googleDriveFolderId: '',
     crmWebhookUrl: '',
-    aiModelVersion: 'gemini-1.5-pro'
+    /* Fix: Use gemini-3-pro-preview instead of the forbidden gemini-1.5-pro model */
+    aiModelVersion: 'gemini-3-pro-preview'
   },
   features: {
     enableRealTimeSync: false,
@@ -305,6 +307,12 @@ const App: React.FC = () => {
                 />
             )}
             {activeTab === Tab.CHAT && <ChatAssistant history={userProgress.chatHistory} onUpdateHistory={(h) => handleUpdateUser({chatHistory: h})} systemInstruction={appConfig.systemInstruction} />}
+            {activeTab === Tab.CALENDAR && (
+              <div className="p-6 pt-16">
+                 <h1 className="text-3xl font-black text-white mb-8 tracking-tighter">PLANNING <span className="text-slate-600">PHASE</span></h1>
+                 <CalendarView externalEvents={events} isDark={true} />
+              </div>
+            )}
             {activeTab === Tab.PROFILE && (
                 <Profile 
                     userProgress={userProgress} 

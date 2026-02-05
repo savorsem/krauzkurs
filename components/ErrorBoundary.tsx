@@ -1,22 +1,28 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
-interface Props {
+// Define the shape of props for the ErrorBoundary component
+interface ErrorBoundaryProps {
   children: ReactNode;
 }
 
-interface State {
+// Define the shape of state for the ErrorBoundary component
+interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+/* Fix: Explicitly import and extend Component to resolve missing state/props property errors and ensure children are correctly handled in React 18+ */
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
@@ -25,6 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public render() {
+    /* Fix: Using this.state correctly within Component scope */
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#0F1115] flex flex-col items-center justify-center p-8 text-center font-sans">
@@ -46,6 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
+    /* Fix: Correctly returning children from props. Props are inherited from Component. */
     return this.props.children;
   }
 }

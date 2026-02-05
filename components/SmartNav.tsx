@@ -49,10 +49,7 @@ export const SmartNav: React.FC<SmartNavProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // --- ISLAND CONTENT LOGIC ---
-
   const renderContent = () => {
-    // 1. LESSON MODE (Active Lesson)
     if (selectedLesson) {
       return (
         <div className="flex items-center justify-between w-full h-full px-1 gap-2">
@@ -80,7 +77,6 @@ export const SmartNav: React.FC<SmartNavProps> = ({
       );
     }
 
-    // 2. PROFILE MODE
     if (activeTab === Tab.PROFILE) {
         return (
             <div className="flex items-center justify-between w-full h-full px-1">
@@ -110,7 +106,6 @@ export const SmartNav: React.FC<SmartNavProps> = ({
         );
     }
 
-    // 3. ADMIN DASHBOARD MODE
     if (activeTab === Tab.ADMIN_DASHBOARD && setActiveAdminTab) {
         const adminItems = [
             { id: 'OVERVIEW', icon: '📊', label: 'Обзор' },
@@ -146,15 +141,15 @@ export const SmartNav: React.FC<SmartNavProps> = ({
         );
     }
 
-    // 4. STANDARD NAVIGATION
     const navItems = [
         { tab: Tab.MODULES, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" /><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" /></svg>, label: 'Base' },
         { tab: Tab.CHAT, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 01-1.112-1.083zM12.643 11.43a.75.75 0 00-1.286 0l-1.5 3a.75.75 0 001.176.93L12 14.229l.967 1.132a.75.75 0 001.176-.93l-1.5-3z" clipRule="evenodd" /></svg>, label: 'Intel' },
+        { tab: Tab.CALENDAR, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3a.75.75 0 011.5 0v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM3.75 7.5v11.25c0 .828.672 1.5 1.5 1.5h13.5c.828 0 1.5-.672 1.5-1.5V7.5H3.75zM7.5 12a.75.75 0 100 1.5h9a.75.75 0 100-1.5h-9z" clipRule="evenodd" /></svg>, label: 'Calendar' },
         { tab: Tab.PROFILE, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" /></svg>, label: 'Profile' },
     ];
 
-    if (role === 'CURATOR') navItems.push({ tab: Tab.CURATOR_DASHBOARD, icon: <span>✓</span>, label: 'Curator' });
-    if (role === 'ADMIN') navItems.push({ tab: Tab.ADMIN_DASHBOARD, icon: <span>⚙️</span>, label: 'Admin' });
+    if (role === 'CURATOR') navItems.splice(3, 0, { tab: Tab.CURATOR_DASHBOARD, icon: <span>✓</span>, label: 'Curator' });
+    if (role === 'ADMIN') navItems.splice(4, 0, { tab: Tab.ADMIN_DASHBOARD, icon: <span>⚙️</span>, label: 'Admin' });
 
     return (
         <div className="flex justify-between items-center w-full px-2">
@@ -164,7 +159,7 @@ export const SmartNav: React.FC<SmartNavProps> = ({
                     <button
                         key={item.tab}
                         onClick={() => setActiveTab(item.tab)}
-                        className={`relative flex flex-col items-center justify-center transition-all duration-300 w-16 h-14 rounded-2xl
+                        className={`relative flex flex-col items-center justify-center transition-all duration-300 w-14 h-14 rounded-2xl
                             ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}
                         `}
                     >

@@ -619,12 +619,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="p-3 bg-black/20 rounded-xl border border-white/5 flex items-center gap-3">
                       <span className="text-xl">🤖</span>
                       <select 
-                          value={config.integrations?.aiModelVersion || 'gemini-1.5-pro'}
+                          /* Fix: Use gemini-3-pro-preview and gemini-3-flash-preview instead of the forbidden 1.5 versions */
+                          value={config.integrations?.aiModelVersion || 'gemini-3-pro-preview'}
                           onChange={e => onUpdateConfig({...config, integrations: {...config.integrations, aiModelVersion: e.target.value}})}
                           className="w-full bg-transparent text-white text-xs outline-none font-mono"
                       >
-                          <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                          <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                          <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
                       </select>
                   </div>
               </div>
