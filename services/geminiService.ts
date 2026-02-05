@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 
 const DEFAULT_SYSTEM_INSTRUCTION = `
@@ -27,93 +28,16 @@ export const sendMessageToGemini = async (chat: Chat, message: string): Promise<
   }
 };
 
-export const createArenaSession = (clientRole: string, objective: string): Chat => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const systemInstruction = `
-Ты — клиент в симуляции продаж. 
-Твоя роль: ${clientRole}
-Цель игрока: ${objective}
-Веди себя реалистично, реагируй на аргументы продавца. Будь сложным, но справедливым оппонентом. 
-Не выходи из роли клиента до конца симуляции.
-`;
-  return ai.chats.create({
-    model: 'gemini-3-flash-preview',
-    config: {
-      systemInstruction,
-    },
-  });
-};
-
-export const getArenaHint = async (
-  clientRole: string, 
-  objective: string, 
-  lastClientMessage: string, 
-  userDraft: string
-): Promise<string | null> => {
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `
-      Rol: Spartan Sales Commander (Coach).
-      Context: User is in a roleplay battle.
-      Client Role: ${clientRole}
-      User Objective: ${objective}
-      Client said: "${lastClientMessage}"
-      User is typing: "${userDraft}"
-      
-      Task: Analyze the user's draft. Provide a SHORT, STRICT tactical command (max 5 words) in Russian.
-      Examples: "Too weak. Push harder.", "Don't apologize.", "Ask an open question.", "Good. Close the deal."
-      
-      Output ONLY the command.
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: { maxOutputTokens: 20 } 
-    });
-
-    return response.text || null;
-  } catch (error) {
-    console.error('Hint Error', error);
-    return null;
-  }
-};
-
-export const evaluateArenaBattle = async (history: { role: string; text: string }[], objective: string): Promise<string> => {
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `
-Проанализируй диалог тренировочного боя между продавцом (user) и клиентом (model).
-Цель продавца была: ${objective}
-
-Диалог:
-${history.map(m => `${m.role === 'user' ? 'Продавец' : 'Клиент'}: ${m.text}`).join('\n')}
-
-Дай оценку действиям продавца в стиле Командира 300 Спартанцев (жестко, лаконично, по делу).
-Укажи:
-1. Удалось ли достичь цели?
-2. 2 сильных тактических приема.
-3. 2 критические ошибки или зоны роста.
-`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', 
-      contents: prompt,
-    });
-
-    return response.text || 'Командир не смог расшифровать отчет о бое.';
-  } catch (error) {
-    console.error('Evaluation Error:', error);
-    return 'Ошибка при анализе стратегии.';
-  }
-};
-
 export const checkHomeworkWithAI = async (
     content: string, // Text or Base64
     type: 'TEXT' | 'PHOTO' | 'VIDEO' | 'FILE',
     instruction: string
   ): Promise<{ passed: boolean; feedback: string }> => {
     try {
+      if (!content) {
+          return { passed: false, feedback: "Ошибка: данные задания не получены." };
+      }
+
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const parts: any[] = [];
@@ -159,9 +83,12 @@ export const checkHomeworkWithAI = async (
         }
       });
   
-      const resultText = response.text;
+      let resultText = response.text || '';
       if (!resultText) throw new Error('Empty AI response');
       
+      // Sanitize JSON (remove markdown code blocks if present)
+      resultText = resultText.replace(/```json\s*|\s*```/g, '').trim();
+
       const parsed = JSON.parse(resultText);
       return {
           passed: parsed.passed,
@@ -277,3 +204,91 @@ export const generateSpartanAvatar = async (
     return null;
   }
 };
+
+// --- SALES ARENA LOGIC ---
+
+export const createArenaSession = (clientRole: string, objective: string): Chat => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const systemInstruction = `
+    Ты играешь роль в симуляторе продаж (Sales Arena).
+    Твоя роль: ${clientRole}
+    Цель пользователя (продавца): ${objective}
+    
+    Веди себя максимально реалистично согласно роли. 
+    Не поддавайся легко. Возражай, сомневайся.
+    Твои ответы должны быть краткими (1-3 предложения), как в реальном диалоге.
+    Никогда не выходи из роли. Ты не AI, ты клиент.
+  `;
+  
+  return ai.chats.create({
+    model: 'gemini-3-flash-preview',
+    config: {
+      systemInstruction: systemInstruction,
+    },
+  });
+};
+
+export const evaluateArenaBattle = async (
+  history: {role: string, text: string}[], 
+  objective: string
+): Promise<string> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const prompt = `
+      Ты - строгий судья по продажам.
+      Цель продавца была: "${objective}".
+      
+      Проанализируй диалог ниже и дай вердикт.
+      1. Достиг ли продавец цели?
+      2. Что было хорошо?
+      3. Что было плохо?
+      4. Итоговая оценка (1-10).
+      
+      Диалог:
+      ${history.map(m => `${m.role === 'user' ? 'ПРОДАВЕЦ' : 'КЛИЕНТ'}: ${m.text}`).join('\n')}
+      
+      Ответ должен быть в формате Markdown, структурированный.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+
+    return response.text || "Не удалось оценить бой.";
+  } catch (e) {
+    console.error('Arena Evaluation Error:', e);
+    return "Ошибка при оценке боя.";
+  }
+};
+
+export const getArenaHint = async (
+    clientRole: string, 
+    objective: string, 
+    lastModelMsg: string, 
+    userDraft: string
+  ): Promise<string | null> => {
+      try {
+          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+          const prompt = `
+              Ситуация: Продавец пытается убедить клиента.
+              Роль клиента: ${clientRole}
+              Цель продавца: ${objective}
+              Последняя реплика клиента: "${lastModelMsg}"
+              Черновик ответа продавца: "${userDraft}"
+              
+              Дай ОЧЕНЬ КРАТКИЙ (макс 10 слов) совет продавцу, как улучшить этот ответ или какую тактику применить. 
+              Совет должен быть в повелительном наклонении.
+          `;
+          
+          const response = await ai.models.generateContent({
+              model: 'gemini-3-flash-preview',
+              contents: prompt,
+          });
+          
+          return response.text ? response.text.trim() : null;
+      } catch (e) {
+          console.error('Arena Hint Error:', e);
+          return null;
+      }
+  }

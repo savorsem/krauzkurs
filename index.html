@@ -40,7 +40,46 @@
         overscroll-behavior-y: none;
       }
 
-      /* Subtle Grid Background */
+      /* LIVE BACKGROUND ANIMATION */
+      .live-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -2;
+        background: linear-gradient(-45deg, #0F1115, #1A1C24, #232530, #13151b);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+      }
+
+      .floating-orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.3;
+        z-index: -1;
+        animation: float 20s infinite ease-in-out;
+      }
+
+      .orb-1 { width: 300px; height: 300px; background: #6C5DD3; top: -10%; left: -10%; animation-delay: 0s; }
+      .orb-2 { width: 400px; height: 400px; background: #00CEFF; bottom: -20%; right: -10%; animation-delay: -5s; }
+      .orb-3 { width: 200px; height: 200px; background: #D4AF37; top: 40%; left: 50%; opacity: 0.15; animation-delay: -10s; }
+
+      @keyframes gradientBG { 
+        0% {background-position: 0% 50%;} 
+        50% {background-position: 100% 50%;} 
+        100% {background-position: 0% 50%;} 
+      }
+
+      @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -50px) rotate(10deg); }
+        66% { transform: translate(-20px, 20px) rotate(-5deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+      }
+
+      /* Subtle Grid Overlay */
       .bg-grid {
         position: fixed;
         top: 0;
@@ -48,11 +87,12 @@
         width: 100vw;
         height: 100vh;
         z-index: -1;
-        opacity: 0.03;
+        opacity: 0.05;
         pointer-events: none;
-        background-image: linear-gradient(#ffffff 1px, transparent 1px),
-        linear-gradient(90deg, #ffffff 1px, transparent 1px);
-        background-size: 40px 40px;
+        background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: 50px 50px;
+        mask-image: radial-gradient(circle at center, black, transparent 80%);
       }
 
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -80,9 +120,11 @@
       @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
       .glass-panel {
-        background: var(--color-card);
+        background: rgba(31, 33, 40, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: 1px solid var(--glass-border);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       }
       
       .toast-container {
@@ -113,6 +155,10 @@
 </script>
 </head>
   <body>
+    <div class="live-bg"></div>
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+    <div class="floating-orb orb-3"></div>
     <div class="bg-grid"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

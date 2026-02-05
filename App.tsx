@@ -327,7 +327,7 @@ const App: React.FC = () => {
           <div className="fixed top-4 right-4 z-[100] animate-fade-in pointer-events-none" style={{ paddingTop: 'var(--safe-area-top)' }}>
              <div className="glass px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
                 <div className={`w-2 h-2 rounded-full animate-pulse ${avatarRegenerating ? 'bg-[#FFAB7B]' : 'bg-green-400'}`}></div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{avatarRegenerating ? 'Forging Armor' : 'Saved'}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{avatarRegenerating ? 'FORGING ARMOR' : 'SYNCED'}</span>
              </div>
           </div>
        )}

@@ -63,7 +63,7 @@ export const SmartNav: React.FC<SmartNavProps> = ({
           </button>
 
           <div className="flex flex-col items-center flex-1 px-2 overflow-hidden">
-             <span className="text-[8px] text-white/50 font-black uppercase tracking-widest">Активный урок</span>
+             <span className="text-[8px] text-white/50 font-black uppercase tracking-widest">АКТИВНАЯ МИССИЯ</span>
              <span className="text-[10px] font-bold text-white truncate w-full text-center leading-tight">{selectedLesson.title}</span>
           </div>
 
@@ -93,7 +93,7 @@ export const SmartNav: React.FC<SmartNavProps> = ({
                        isSettingsOpen ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/20'
                    }`}
                 >
-                   {isSettingsOpen ? 'Закрыть' : 'Настройки'}
+                   {isSettingsOpen ? 'ЗАКРЫТЬ' : 'НАСТРОЙКИ'}
                 </button>
 
                 <button 
@@ -108,11 +108,10 @@ export const SmartNav: React.FC<SmartNavProps> = ({
 
     if (activeTab === Tab.ADMIN_DASHBOARD && setActiveAdminTab) {
         const adminItems = [
-            { id: 'OVERVIEW', icon: '📊', label: 'Обзор' },
-            { id: 'USERS', icon: '👥', label: 'Бойцы' },
-            { id: 'COURSE', icon: '🎓', label: 'Курс' },
-            { id: 'CALENDAR', icon: '📅', label: 'План' },
-            { id: 'SETTINGS', icon: '⚙️', label: 'Конфиг' },
+            { id: 'OVERVIEW', icon: '📊' },
+            { id: 'USERS', icon: '👥' },
+            { id: 'COURSE', icon: '🎓' },
+            { id: 'SETTINGS', icon: '⚙️' },
         ];
 
         return (
@@ -130,10 +129,10 @@ export const SmartNav: React.FC<SmartNavProps> = ({
                         <button
                             key={item.id}
                             onClick={() => setActiveAdminTab(item.id as AdminTab)}
-                            className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${isActive ? 'bg-white/10 text-white scale-110' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all ${isActive ? 'bg-white/10 text-white scale-110 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                         >
-                            <span className="text-lg leading-none mb-0.5">{item.icon}</span>
-                            {isActive && <div className="w-1 h-1 bg-[#6C5DD3] rounded-full"></div>}
+                            <span className="text-xl leading-none mb-0.5">{item.icon}</span>
+                            {isActive && <div className="w-1 h-1 bg-[#6C5DD3] rounded-full mt-1"></div>}
                         </button>
                     )
                 })}
@@ -142,31 +141,31 @@ export const SmartNav: React.FC<SmartNavProps> = ({
     }
 
     const navItems = [
-        { tab: Tab.MODULES, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" /><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" /></svg>, label: 'Base' },
-        { tab: Tab.CHAT, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 01-1.112-1.083zM12.643 11.43a.75.75 0 00-1.286 0l-1.5 3a.75.75 0 001.176.93L12 14.229l.967 1.132a.75.75 0 001.176-.93l-1.5-3z" clipRule="evenodd" /></svg>, label: 'Intel' },
-        { tab: Tab.CALENDAR, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3a.75.75 0 011.5 0v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM3.75 7.5v11.25c0 .828.672 1.5 1.5 1.5h13.5c.828 0 1.5-.672 1.5-1.5V7.5H3.75zM7.5 12a.75.75 0 100 1.5h9a.75.75 0 100-1.5h-9z" clipRule="evenodd" /></svg>, label: 'Calendar' },
-        { tab: Tab.PROFILE, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" /></svg>, label: 'Profile' },
+        { tab: Tab.MODULES, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" /><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" /></svg>, label: 'БАЗА' },
+        { tab: Tab.CHAT, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 01-1.112-1.083zM12.643 11.43a.75.75 0 00-1.286 0l-1.5 3a.75.75 0 001.176.93L12 14.229l.967 1.132a.75.75 0 001.176-.93l-1.5-3z" clipRule="evenodd" /></svg>, label: 'РАЗВЕДКА' },
+        { tab: Tab.PROFILE, icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" /></svg>, label: 'ПРОФИЛЬ' },
     ];
 
-    if (role === 'CURATOR') navItems.splice(3, 0, { tab: Tab.CURATOR_DASHBOARD, icon: <span>✓</span>, label: 'Curator' });
-    if (role === 'ADMIN') navItems.splice(4, 0, { tab: Tab.ADMIN_DASHBOARD, icon: <span>⚙️</span>, label: 'Admin' });
+    if (role === 'CURATOR') navItems.splice(2, 0, { tab: Tab.CURATOR_DASHBOARD, icon: <span>✓</span>, label: 'ШТАБ' });
+    if (role === 'ADMIN') navItems.push({ tab: Tab.ADMIN_DASHBOARD, icon: <span>⚙️</span>, label: 'ПУЛЬТ' });
 
     return (
-        <div className="flex justify-between items-center w-full px-2">
+        <div className="flex justify-between items-center w-full px-4">
             {navItems.map((item) => {
                 const isActive = activeTab === item.tab;
                 return (
                     <button
                         key={item.tab}
                         onClick={() => setActiveTab(item.tab)}
-                        className={`relative flex flex-col items-center justify-center transition-all duration-300 w-14 h-14 rounded-2xl
+                        className={`relative flex flex-col items-center justify-center transition-all duration-300 w-16 h-14 rounded-2xl group
                             ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}
                         `}
                     >
-                        <div className={`transition-all duration-300 ${isActive ? 'text-[#00CEFF] scale-110 drop-shadow-[0_0_8px_rgba(0,206,255,0.6)]' : 'text-slate-500'}`}>
+                        <div className={`transition-all duration-300 ${isActive ? 'text-[#00CEFF] scale-110 drop-shadow-[0_0_10px_rgba(0,206,255,0.4)]' : 'text-slate-500 group-hover:text-slate-300'}`}>
                             {item.icon}
                         </div>
-                        {isActive && <div className="absolute bottom-1 w-1 h-1 bg-[#00CEFF] rounded-full"></div>}
+                        <span className={`text-[8px] font-black uppercase mt-1 tracking-widest ${isActive ? 'text-white' : 'text-slate-600'}`}>{item.label}</span>
+                        {isActive && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#00CEFF] rounded-full shadow-[0_0_5px_#00CEFF]"></div>}
                     </button>
                 );
             })}
@@ -176,13 +175,13 @@ export const SmartNav: React.FC<SmartNavProps> = ({
 
   return (
     <div 
-      className={`fixed left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1) w-full max-w-[360px] px-4
+      className={`fixed left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1) w-full max-w-[380px] px-4
         ${isVisible ? 'bottom-8 translate-y-0' : 'bottom-0 translate-y-[150%]'}
       `}
     >
       <div 
         className={`
-          bg-[#1F2128]/90 backdrop-blur-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6)]
+          bg-[#1F2128]/95 backdrop-blur-2xl shadow-[0_20px_40px_rgba(0,0,0,0.8)]
           transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1)
           border border-white/10 flex items-center
           ${selectedLesson 

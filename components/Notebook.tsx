@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from './Button';
 
 interface NotebookProps {
@@ -8,10 +8,31 @@ interface NotebookProps {
 
 export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
   const [activeTab, setActiveTab] = useState<'DAILY' | 'GOALS' | 'GRATITUDE' | 'IDEAS'>('DAILY');
+  
+  // Lazy initialization from LocalStorage to restore drafts
   const [habitText, setHabitText] = useState('');
-  const [goalText, setGoalText] = useState('');
-  const [gratitudeText, setGratitudeText] = useState('');
-  const [ideaText, setIdeaText] = useState('');
+  const [goalText, setGoalText] = useState(() => localStorage.getItem('notebook_draft_goal') || '');
+  const [gratitudeText, setGratitudeText] = useState(() => localStorage.getItem('notebook_draft_gratitude') || '');
+  const [ideaText, setIdeaText] = useState(() => localStorage.getItem('notebook_draft_idea') || '');
+
+  // Refs to keep track of current state inside the interval without resetting it
+  const stateRef = useRef({ goalText, gratitudeText, ideaText });
+
+  useEffect(() => {
+    stateRef.current = { goalText, gratitudeText, ideaText };
+  }, [goalText, gratitudeText, ideaText]);
+
+  // Auto-save logic: Runs every 30 seconds
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      localStorage.setItem('notebook_draft_goal', stateRef.current.goalText);
+      localStorage.setItem('notebook_draft_gratitude', stateRef.current.gratitudeText);
+      localStorage.setItem('notebook_draft_idea', stateRef.current.ideaText);
+      // Optional: console.log('Auto-saved notebook drafts'); 
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Daily Habits List (Mock)
   const [habits, setHabits] = useState([
@@ -31,22 +52,22 @@ export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
   const submitGoal = () => {
     if (!goalText.trim()) return;
     onAction('GOAL'); // Award 10 XP
+    localStorage.removeItem('notebook_draft_goal'); // Clear draft on success
     setGoalText('');
-    alert('Цель зафиксирована! Действие учтено. +10 XP');
   };
 
   const submitGratitude = () => {
     if (!gratitudeText.trim()) return;
     onAction('GRATITUDE'); // Award 10 XP
+    localStorage.removeItem('notebook_draft_gratitude'); // Clear draft on success
     setGratitudeText('');
-    alert('Благодарность отправлена во Вселенную. +10 XP');
   };
 
   const submitIdea = () => {
     if (!ideaText.trim()) return;
     onAction('SUGGESTION'); // Award 50 XP
+    localStorage.removeItem('notebook_draft_idea'); // Clear draft on success
     setIdeaText('');
-    alert('Инициатива принята! Командир оценит. +50 XP');
   };
 
   return (
@@ -114,9 +135,12 @@ export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
                                 placeholder="Сегодня я сделал..."
                                 className="w-full bg-black/30 text-white p-4 rounded-xl border border-white/10 outline-none h-32 text-sm mb-4 resize-none focus:border-[#D4AF37]/50"
                              />
-                             <button onClick={submitGoal} className="w-full py-3 bg-[#D4AF37] text-black font-black uppercase text-xs rounded-xl hover:bg-[#F4CF57] shadow-lg shadow-[#D4AF37]/20">
-                                 Зафиксировать Действие (+10 XP)
-                             </button>
+                             <div className="flex justify-between items-center">
+                                 <span className="text-[9px] text-slate-500 uppercase tracking-widest">Автосохранение вкл.</span>
+                                 <button onClick={submitGoal} className="px-6 py-3 bg-[#D4AF37] text-black font-black uppercase text-xs rounded-xl hover:bg-[#F4CF57] shadow-lg shadow-[#D4AF37]/20">
+                                     Зафиксировать (+10 XP)
+                                 </button>
+                             </div>
                         </div>
                     </div>
                 )}
@@ -133,9 +157,12 @@ export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
                                 placeholder="Я благодарен за..."
                                 className="w-full bg-black/30 text-white p-4 rounded-xl border border-white/10 outline-none h-32 text-sm mb-4 resize-none focus:border-[#6C5DD3]/50"
                              />
-                             <button onClick={submitGratitude} className="w-full py-3 bg-[#6C5DD3] text-white font-black uppercase text-xs rounded-xl hover:bg-[#7D6EE4] shadow-lg shadow-[#6C5DD3]/20">
-                                 Отправить (+10 XP)
-                             </button>
+                             <div className="flex justify-between items-center">
+                                 <span className="text-[9px] text-slate-500 uppercase tracking-widest">Автосохранение вкл.</span>
+                                 <button onClick={submitGratitude} className="px-6 py-3 bg-[#6C5DD3] text-white font-black uppercase text-xs rounded-xl hover:bg-[#7D6EE4] shadow-lg shadow-[#6C5DD3]/20">
+                                     Отправить (+10 XP)
+                                 </button>
+                             </div>
                         </div>
                     </div>
                 )}
@@ -152,9 +179,12 @@ export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
                                 placeholder="Мое предложение..."
                                 className="w-full bg-black/30 text-white p-4 rounded-xl border border-white/10 outline-none h-32 text-sm mb-4 resize-none focus:border-white/20"
                              />
-                             <button onClick={submitIdea} className="w-full py-3 bg-white text-black font-black uppercase text-xs rounded-xl hover:bg-slate-200 shadow-lg">
-                                 Внести предложение (+50 XP)
-                             </button>
+                             <div className="flex justify-between items-center">
+                                 <span className="text-[9px] text-slate-500 uppercase tracking-widest">Автосохранение вкл.</span>
+                                 <button onClick={submitIdea} className="px-6 py-3 bg-white text-black font-black uppercase text-xs rounded-xl hover:bg-slate-200 shadow-lg">
+                                     Внести (+50 XP)
+                                 </button>
+                             </div>
                         </div>
                     </div>
                 )}

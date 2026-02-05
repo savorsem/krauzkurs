@@ -6,11 +6,13 @@ export interface Lesson {
   title: string;
   description: string;
   content: string;
+  videoUrl?: string; // Support for lesson specific video
   xpReward: number;
   homeworkType: HomeworkType;
   homeworkTask: string;
   aiGradingInstruction: string;
   deadline?: string; 
+  difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 
 export type ModuleCategory = 'SALES' | 'PSYCHOLOGY' | 'TACTICS' | 'GENERAL' | 'NOTEBOOK';
@@ -25,7 +27,8 @@ export interface Module {
   imageUrl: string;
   videoUrl?: string;
   pdfUrl?: string;
-  prerequisites: string[]; 
+  prerequisites: string[];
+  isHidden?: boolean; // Added for Admin control
 }
 
 export type UserRole = 'STUDENT' | 'CURATOR' | 'ADMIN';
@@ -55,7 +58,6 @@ export interface UserStats {
   };
   suggestionsMade: number; 
   webinarsAttended: number;
-  // Added for Radar Chart
   skills: {
     sales: number;
     tactics: number;
@@ -92,7 +94,7 @@ export interface UserProgress {
 
 export interface ThemeConfig {
     cardStyle: 'GLASS' | 'SOLID' | 'NEON';
-    borderRadius: 'ROUNDED' | 'SHARP'; // Rounded = 2rem, Sharp = 0.5rem
+    borderRadius: 'ROUNDED' | 'SHARP';
     accentColor: string;
 }
 
@@ -108,13 +110,13 @@ export interface AppConfig {
   appDescription: string;
   primaryColor: string;
   systemInstruction: string;
-  theme: ThemeConfig; // Added Theme Control
-  database: DatabaseConfig; // Added DB Control
+  theme: ThemeConfig;
+  database: DatabaseConfig;
   integrations: {
     telegramBotToken?: string;
     googleDriveFolderId?: string;
     aiModelVersion?: string;
-    aiTemperature: number; // Added
+    aiTemperature: number;
   };
   features: {
     enableRealTimeSync: boolean;
@@ -153,10 +155,10 @@ export enum Tab {
 export type AdminTab = 'OVERVIEW' | 'COURSE' | 'USERS' | 'CALENDAR' | 'SETTINGS' | 'DESIGN' | 'DATABASE';
 
 export interface ArenaScenario {
-    id: string;
-    title: string;
-    difficulty: 'Easy' | 'Medium' | 'Hard';
-    clientRole: string;
-    objective: string;
-    initialMessage: string;
+  id: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  clientRole: string;
+  objective: string;
+  initialMessage: string;
 }
