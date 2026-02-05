@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from './Button';
+import { Storage } from '../services/storage';
 
 interface NotebookProps {
   onAction: (type: 'HABIT' | 'GOAL' | 'GRATITUDE' | 'SUGGESTION') => void;
@@ -9,11 +9,11 @@ interface NotebookProps {
 export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
   const [activeTab, setActiveTab] = useState<'DAILY' | 'GOALS' | 'GRATITUDE' | 'IDEAS'>('DAILY');
   
-  // Lazy initialization from LocalStorage to restore drafts
-  const [habitText, setHabitText] = useState('');
-  const [goalText, setGoalText] = useState(() => localStorage.getItem('notebook_draft_goal') || '');
-  const [gratitudeText, setGratitudeText] = useState(() => localStorage.getItem('notebook_draft_gratitude') || '');
-  const [ideaText, setIdeaText] = useState(() => localStorage.getItem('notebook_draft_idea') || '');
+  // Lazy initialization from Storage to restore drafts
+  const [habitText] = useState(''); // kept for potential future usage
+  const [goalText, setGoalText] = useState(() => Storage.get<string>('notebook_draft_goal', ''));
+  const [gratitudeText, setGratitudeText] = useState(() => Storage.get<string>('notebook_draft_gratitude', ''));
+  const [ideaText, setIdeaText] = useState(() => Storage.get<string>('notebook_draft_idea', ''));
 
   // Refs to keep track of current state inside the interval without resetting it
   const stateRef = useRef({ goalText, gratitudeText, ideaText });
@@ -22,13 +22,12 @@ export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
     stateRef.current = { goalText, gratitudeText, ideaText };
   }, [goalText, gratitudeText, ideaText]);
 
-  // Auto-save logic: Runs every 30 seconds
+  // Auto-save logic: Runs every 30 seconds using Storage service
   useEffect(() => {
     const intervalId = setInterval(() => {
-      localStorage.setItem('notebook_draft_goal', stateRef.current.goalText);
-      localStorage.setItem('notebook_draft_gratitude', stateRef.current.gratitudeText);
-      localStorage.setItem('notebook_draft_idea', stateRef.current.ideaText);
-      // Optional: console.log('Auto-saved notebook drafts'); 
+      Storage.set('notebook_draft_goal', stateRef.current.goalText);
+      Storage.set('notebook_draft_gratitude', stateRef.current.gratitudeText);
+      Storage.set('notebook_draft_idea', stateRef.current.ideaText);
     }, 30000);
 
     return () => clearInterval(intervalId);
@@ -52,21 +51,21 @@ export const Notebook: React.FC<NotebookProps> = ({ onAction }) => {
   const submitGoal = () => {
     if (!goalText.trim()) return;
     onAction('GOAL'); // Award 10 XP
-    localStorage.removeItem('notebook_draft_goal'); // Clear draft on success
+    Storage.remove('notebook_draft_goal'); // Clear draft on success
     setGoalText('');
   };
 
   const submitGratitude = () => {
     if (!gratitudeText.trim()) return;
     onAction('GRATITUDE'); // Award 10 XP
-    localStorage.removeItem('notebook_draft_gratitude'); // Clear draft on success
+    Storage.remove('notebook_draft_gratitude'); // Clear draft on success
     setGratitudeText('');
   };
 
   const submitIdea = () => {
     if (!ideaText.trim()) return;
     onAction('SUGGESTION'); // Award 50 XP
-    localStorage.removeItem('notebook_draft_idea'); // Clear draft on success
+    Storage.remove('notebook_draft_idea'); // Clear draft on success
     setIdeaText('');
   };
 

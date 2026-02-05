@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
 import { createChatSession, sendMessageToGemini } from '../services/geminiService';
@@ -16,17 +17,20 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ history, onUpdateH
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Only initialize session if it doesn't exist
     if (!chatSession) {
-        const session = createChatSession(systemInstruction);
+        const session = createChatSession(systemInstruction, history);
         setChatSession(session);
     }
+  }, [chatSession, systemInstruction]); // Removed history dependency to prevent infinite session recreation
+
+  useEffect(() => { 
     if (history.length === 0) {
       const initialMsg: ChatMessage = { id: 'welcome', role: 'model', text: 'Привет, боец! Я твой AI-командир. Готов к разбору полетов?', timestamp: new Date().toISOString() };
       onUpdateHistory([initialMsg]);
     }
-  }, [systemInstruction, chatSession, history.length, onUpdateHistory]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [history, isLoading]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); 
+  }, [history, isLoading, onUpdateHistory]);
 
   const handleSend = async () => {
     if (!inputText.trim() || !chatSession) return;

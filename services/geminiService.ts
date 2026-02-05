@@ -1,6 +1,6 @@
 
-
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { ChatMessage } from "../types";
 
 const DEFAULT_SYSTEM_INSTRUCTION = `
 Ты — Командир элитного отряда продаж "300 Спартанцев".
@@ -8,13 +8,21 @@ const DEFAULT_SYSTEM_INSTRUCTION = `
 Твой стиль: Жесткий, но справедливый. Военная риторика.
 `;
 
-export const createChatSession = (customInstruction?: string): Chat => {
+export const createChatSession = (customInstruction?: string, history?: ChatMessage[]): Chat => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  // Convert app specific ChatMessage to SDK history format
+  const historySDK = history?.map(msg => ({
+    role: msg.role,
+    parts: [{ text: msg.text }]
+  })) || [];
+
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
       systemInstruction: customInstruction || DEFAULT_SYSTEM_INSTRUCTION,
     },
+    history: historySDK
   });
 };
 

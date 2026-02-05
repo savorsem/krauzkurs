@@ -20,6 +20,7 @@ class StorageService {
       try {
         // Strategy 1: If it's an object with 'originalPhotoBase64', try removing it
         if (typeof value === 'object' && value !== null && 'originalPhotoBase64' in value) {
+           // eslint-disable-next-line @typescript-eslint/no-unused-vars
            const { originalPhotoBase64, ...rest } = value as any;
            Logger.warn('Attempting to save without heavy image data...');
            localStorage.setItem(`${PREFIX}${key}`, JSON.stringify(rest));
@@ -44,6 +45,13 @@ class StorageService {
       Logger.error(`Error reading key: ${key}`, error);
       return defaultValue;
     }
+  }
+
+  /**
+   * Check if item exists
+   */
+  has(key: string): boolean {
+    return localStorage.getItem(`${PREFIX}${key}`) !== null;
   }
 
   /**

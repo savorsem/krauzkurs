@@ -6,7 +6,6 @@ import { ModuleList } from './components/ModuleList';
 import { ChatAssistant } from './components/ChatAssistant';
 import { Profile } from './components/Profile';
 import { LessonView } from './components/LessonView';
-import { CuratorDashboard } from './components/CuratorDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { CalendarView } from './components/CalendarView';
 import { Auth } from './components/Auth';
@@ -58,6 +57,7 @@ const App: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
+  // Initialize state once from Storage
   const [appConfig, setAppConfig] = useState<AppConfig>(() => Storage.get<AppConfig>('appConfig', DEFAULT_CONFIG));
   const [modules, setModules] = useState<Module[]>(() => Storage.get<Module[]>('courseModules', COURSE_MODULES));
   const [events, setEvents] = useState<CalendarEvent[]>(() => Storage.get<CalendarEvent[]>('calendarEvents', MOCK_EVENTS));
@@ -67,6 +67,8 @@ const App: React.FC = () => {
     return Storage.get<UserProgress>('progress', {
       xp: 0,
       level: 1,
+      balance: 1500, // Default Coins
+      friendsCount: 0,
       completedLessonIds: [],
       completedModuleIds: [],
       submittedHomeworks: [],
@@ -74,6 +76,7 @@ const App: React.FC = () => {
       name: 'User',
       isAuthenticated: false,
       chatHistory: [],
+      inventory: [],
       notifications: {
         pushEnabled: true,
         telegramSync: false,
@@ -96,17 +99,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const root = document.documentElement;
     const { theme } = appConfig;
-    
-    // Inject accent color
     root.style.setProperty('--color-accent', theme.accentColor);
     
-    // Inject Border Radius
     let radiusValue = '2.5rem';
     if (theme.borderRadius === 'SHARP') radiusValue = '0.5rem';
     if (theme.borderRadius === 'CIRCLE') radiusValue = '9999px';
     root.style.setProperty('--radius-main', radiusValue);
 
-    // Card Styles (CSS Classes logic handled in components, but we can set global vars)
     if (theme.cardStyle === 'NEON') {
        root.style.setProperty('--card-border', `1px solid ${theme.accentColor}`);
        root.style.setProperty('--card-shadow', `0 0 15px ${theme.accentColor}40`);
@@ -114,18 +113,19 @@ const App: React.FC = () => {
        root.style.setProperty('--card-border', '1px solid rgba(255,255,255,0.05)');
        root.style.setProperty('--card-shadow', '0 8px 32px rgba(0,0,0,0.3)');
     }
-
   }, [appConfig.theme]);
 
+  // --- PERSISTENCE ---
   useEffect(() => {
     setIsSyncing(true);
-    Storage.set('progress', userProgress);
-    Storage.set('appConfig', appConfig);
-    Storage.set('courseModules', modules);
-    Storage.set('calendarEvents', events);
-    Storage.set('allUsers', allUsers);
-
-    const timeout = setTimeout(() => setIsSyncing(false), 800);
+    const timeout = setTimeout(() => {
+        Storage.set('progress', userProgress);
+        Storage.set('appConfig', appConfig);
+        Storage.set('courseModules', modules);
+        Storage.set('calendarEvents', events);
+        Storage.set('allUsers', allUsers);
+        setIsSyncing(false);
+    }, 1000);
     return () => clearTimeout(timeout);
   }, [userProgress, appConfig, modules, events, allUsers]);
 
@@ -182,7 +182,10 @@ const App: React.FC = () => {
             armorStyle: data.armorStyle,
             backgroundStyle: data.backgroundStyle,
             registrationDate: new Date().toISOString(),
-            stats: defaultStats
+            stats: defaultStats,
+            balance: 500, 
+            friendsCount: 0,
+            inventory: []
         };
     }
     
@@ -223,12 +226,14 @@ const App: React.FC = () => {
     const parentModule = modules.find(m => m.lessons.some(l => l.id === lessonId));
 
     const totalXpAwarded = calculateTotalXpGained(lesson.xpReward, bonusXp, userProgress.level);
+    const coinReward = Math.floor(totalXpAwarded * 0.5); 
+
     const newTotalXp = userProgress.xp + totalXpAwarded;
+    const newBalance = (userProgress.balance || 0) + coinReward;
     const newLevel = Math.max(userProgress.level, Math.floor(newTotalXp / 100) + 1);
     
     const updatedCompletedLessons = [...userProgress.completedLessonIds, lessonId];
     
-    // Check for Module Completion
     const newlyCompletedModules: string[] = [];
     modules.forEach(mod => {
         if (!userProgress.completedModuleIds.includes(mod.id)) {
@@ -239,25 +244,25 @@ const App: React.FC = () => {
         }
     });
     
-    // Update Skills based on category
     const currentSkills = { ...userProgress.stats.skills };
     if (parentModule) {
         if (parentModule.category === 'SALES') currentSkills.sales += 5;
         if (parentModule.category === 'TACTICS') currentSkills.tactics += 5;
         if (parentModule.category === 'PSYCHOLOGY') currentSkills.psychology += 5;
     }
-    currentSkills.discipline += 2; // Every lesson adds discipline
+    currentSkills.discipline += 2;
 
     const updates: Partial<UserProgress> = {
         xp: newTotalXp,
         level: newLevel,
+        balance: newBalance,
         completedLessonIds: updatedCompletedLessons,
         completedModuleIds: [...userProgress.completedModuleIds, ...newlyCompletedModules],
         stats: { ...userProgress.stats, skills: currentSkills }
     };
 
     handleUpdateUser(updates);
-    addToast('success', `Миссия выполнена! +${totalXpAwarded} XP`);
+    addToast('success', `Миссия выполнена! +${totalXpAwarded} XP | +${coinReward} 🪙`);
 
     if (newlyCompletedModules.length > 0) {
         addToast('success', `Модуль полностью пройден!`);
@@ -299,10 +304,13 @@ const App: React.FC = () => {
 
   const handleReferral = () => {
       const xpAward = 10000;
+      const coinAward = 1000;
       const newXp = userProgress.xp + xpAward;
+      const newBalance = (userProgress.balance || 0) + coinAward;
       const stats = { ...userProgress.stats, referrals: userProgress.stats.referrals + 1 };
-      handleUpdateUser({ xp: newXp, stats });
-      addToast('success', `Боец завербован! +${xpAward} XP`);
+      
+      handleUpdateUser({ xp: newXp, balance: newBalance, stats });
+      addToast('success', `Боец завербован! +${xpAward} XP | +${coinAward} 🪙`);
   };
 
   const handleShareStory = () => {
@@ -410,9 +418,9 @@ const App: React.FC = () => {
                     onShareStory={handleShareStory}
                     isSettingsOpen={isSettingsOpen}
                     theme={appConfig.theme}
+                    onClose={() => setActiveTab(Tab.MODULES)}
                 />
             )}
-            {activeTab === Tab.CURATOR_DASHBOARD && userProgress.role === 'CURATOR' && <CuratorDashboard />}
             {activeTab === Tab.ADMIN_DASHBOARD && userProgress.role === 'ADMIN' && (
                 <AdminDashboard 
                     config={appConfig} 

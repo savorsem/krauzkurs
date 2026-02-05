@@ -6,7 +6,7 @@ export interface Lesson {
   title: string;
   description: string;
   content: string;
-  videoUrl?: string; // Support for lesson specific video
+  videoUrl?: string;
   xpReward: number;
   homeworkType: HomeworkType;
   homeworkTask: string;
@@ -28,10 +28,10 @@ export interface Module {
   videoUrl?: string;
   pdfUrl?: string;
   prerequisites: string[];
-  isHidden?: boolean; // Added for Admin control
+  isHidden?: boolean;
 }
 
-export type UserRole = 'STUDENT' | 'CURATOR' | 'ADMIN';
+export type UserRole = 'STUDENT' | 'ADMIN';
 
 export interface ChatMessage {
   id: string;
@@ -66,6 +66,24 @@ export interface UserStats {
   };
 }
 
+export interface ShopItem {
+  id: string;
+  type: 'ARMOR' | 'THEME' | 'BOOST';
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  value: string; // The actual value (e.g., armor style ID or hex code)
+}
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  date: string;
+  content: string;
+  type: 'UPDATE' | 'EVENT' | 'ALERT';
+}
+
 export interface UserProgress {
   id?: string;
   telegramId?: string; 
@@ -75,10 +93,13 @@ export interface UserProgress {
   role: UserRole;
   isAuthenticated: boolean;
   registrationDate?: string;
-  isBanned?: boolean; // New field
+  isBanned?: boolean;
   
   xp: number;
   level: number;
+  balance: number;
+  friendsCount: number;
+  
   completedLessonIds: string[];
   completedModuleIds: string[]; 
   submittedHomeworks: string[];
@@ -88,6 +109,8 @@ export interface UserProgress {
   avatarUrl?: string;
   armorStyle?: string;
   backgroundStyle?: string;
+  
+  inventory: string[]; // List of owned ShopItem IDs
   
   notifications: NotificationSettings;
   stats: UserStats;
@@ -152,7 +175,6 @@ export enum Tab {
   CHAT = 'CHAT',
   PROFILE = 'PROFILE',
   CALENDAR = 'CALENDAR',
-  CURATOR_DASHBOARD = 'CURATOR_DASHBOARD',
   ADMIN_DASHBOARD = 'ADMIN_DASHBOARD'
 }
 
