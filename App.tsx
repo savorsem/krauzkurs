@@ -56,6 +56,7 @@ const App: React.FC = () => {
   const [avatarRegenerating, setAvatarRegenerating] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [moduleToEdit, setModuleToEdit] = useState<Module | null>(null);
   
   // Initialize state once from Storage
   const [appConfig, setAppConfig] = useState<AppConfig>(() => Storage.get<AppConfig>('appConfig', DEFAULT_CONFIG));
@@ -391,6 +392,11 @@ const App: React.FC = () => {
                     onProfileClick={() => setActiveTab(Tab.PROFILE)}
                     onNotebookAction={handleNotebookAction}
                     theme={appConfig.theme}
+                    onEditModule={(module) => {
+                      setModuleToEdit(module);
+                      setActiveTab(Tab.ADMIN_DASHBOARD);
+                      setActiveAdminTab('COURSE');
+                    }}
                 />
             )}
             {activeTab === Tab.CURRICULUM && (
@@ -433,6 +439,8 @@ const App: React.FC = () => {
                     onUpdateEvents={setEvents}
                     addToast={addToast}
                     activeTab={activeAdminTab}
+                    moduleToEdit={moduleToEdit}
+                    onClearModuleToEdit={() => setModuleToEdit(null)}
                 />
             )}
           </>

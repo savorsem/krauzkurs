@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { AppConfig, Module, UserProgress, CalendarEvent, Lesson, AdminTab } from '../types';
+import React, { useState, useEffect } from 'react';
+import { AppConfig, Module, UserProgress, CalendarEvent, Lesson, AdminTab, ModuleCategory } from '../types';
 import { Button } from './Button';
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -15,12 +15,48 @@ interface AdminDashboardProps {
   onUpdateEvents: (newEvents: CalendarEvent[]) => void;
   addToast: (type: 'success' | 'error' | 'info', message: string) => void;
   activeTab: AdminTab;
+  moduleToEdit?: Module | null;
+  onClearModuleToEdit?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  config, onUpdateConfig, modules, onUpdateModules, users, onUpdateUsers, activeTab, addToast
+  config, onUpdateConfig, modules, onUpdateModules, users, onUpdateUsers, activeTab, addToast, moduleToEdit, onClearModuleToEdit
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<Partial<Module>>({});
+
+  useEffect(() => {
+    if (moduleToEdit) {
+        setEditingModule(moduleToEdit);
+        setIsEditModalOpen(true);
+    }
+  }, [moduleToEdit]);
+
+  const handleCloseModal = () => {
+      setIsEditModalOpen(false);
+      setEditingModule({});
+      if (onClearModuleToEdit) onClearModuleToEdit();
+  };
+
+  const handleSaveModule = () => {
+      if (!editingModule.title || !editingModule.id) {
+          addToast('error', 'Title and ID are required');
+          return;
+      }
+
+      const newModule = editingModule as Module;
+      const exists = modules.find(m => m.id === newModule.id);
+
+      if (exists) {
+          onUpdateModules(modules.map(m => m.id === newModule.id ? newModule : m));
+          addToast('success', 'Module updated');
+      } else {
+          onUpdateModules([...modules, newModule]);
+          addToast('success', 'Module created');
+      }
+      handleCloseModal();
+  };
   
   // --- SUB-COMPONENTS ---
   
@@ -80,7 +116,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex justify-between items-center">
                   <span className="text-slate-400 text-xs font-bold">{module.lessons.length} уроков</span>
                   <div className="flex gap-2">
-                       <button className="text-[10px] font-bold bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg text-white transition-colors">EDIT</button>
+                       <button 
+                            onClick={() => {
+                                setEditingModule(module);
+                                setIsEditModalOpen(true);
+                            }}
+                            className="text-[10px] font-bold bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg text-white transition-colors"
+                        >
+                            EDIT
+                       </button>
                        <button 
                             onClick={() => {
                                 if(confirm('Удалить?')) {
@@ -149,7 +193,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="pb-32">
            <div className="flex justify-between items-center mb-6">
                <h2 className="text-xl font-black text-white">Modules Repository</h2>
-               <Button className="!py-2 !px-4 text-xs !rounded-xl" onClick={() => addToast('info', 'Функция создания в разработке')}>+ New Module</Button>
+               <Button 
+                   className="!py-2 !px-4 text-xs !rounded-xl" 
+                   onClick={() => {
+                       setEditingModule({ 
+                           id: `m${Date.now()}`, 
+                           title: '', 
+                           description: '', 
+                           lessons: [], 
+                           category: 'GENERAL',
+                           minLevel: 1,
+                           prerequisites: []
+                       });
+                       setIsEditModalOpen(true);
+                   }}
+               >
+                   + New Module
+               </Button>
            </div>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {modules.map(m => <ModuleCard key={m.id} module={m} />)}
@@ -182,6 +242,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
   );
 
+  const EditModal = () => (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={handleCloseModal}></div>
+          <div className="bg-[#1F2128] w-full max-w-lg rounded-[2.5rem] p-6 relative z-10 border border-white/10 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <h2 className="text-2xl font-black text-white mb-6">
+                  {editingModule.id ? 'EDIT MODULE' : 'CREATE MODULE'}
+              </h2>
+              
+              <div className="space-y-4">
+                  <div>
+                      <label className="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-1">Title</label>
+                      <input 
+                        value={editingModule.title || ''}
+                        onChange={e => setEditingModule({...editingModule, title: e.target.value})}
+                        className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-[#6C5DD3]"
+                        placeholder="Module Title"
+                      />
+                  </div>
+                  <div>
+                      <label className="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-1">Description</label>
+                      <textarea 
+                        value={editingModule.description || ''}
+                        onChange={e => setEditingModule({...editingModule, description: e.target.value})}
+                        className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white text-sm h-24 outline-none focus:border-[#6C5DD3]"
+                        placeholder="Description"
+                      />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                      <div>
+                          <label className="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-1">Category</label>
+                          <select 
+                            value={editingModule.category || 'GENERAL'}
+                            onChange={e => setEditingModule({...editingModule, category: e.target.value as ModuleCategory})}
+                            className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-[#6C5DD3]"
+                          >
+                              <option value="GENERAL">General</option>
+                              <option value="SALES">Sales</option>
+                              <option value="PSYCHOLOGY">Psychology</option>
+                              <option value="TACTICS">Tactics</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label className="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-1">Min Level</label>
+                          <input 
+                            type="number"
+                            value={editingModule.minLevel || 1}
+                            onChange={e => setEditingModule({...editingModule, minLevel: parseInt(e.target.value)})}
+                            className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-[#6C5DD3]"
+                          />
+                      </div>
+                  </div>
+                  <div>
+                      <label className="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-1">Image URL</label>
+                      <input 
+                        value={editingModule.imageUrl || ''}
+                        onChange={e => setEditingModule({...editingModule, imageUrl: e.target.value})}
+                        className="w-full bg-black/30 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-[#6C5DD3]"
+                        placeholder="https://..."
+                      />
+                  </div>
+                  
+                  <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                      <h4 className="text-white font-bold text-sm mb-2">Lessons ({editingModule.lessons?.length || 0})</h4>
+                      <p className="text-slate-500 text-[10px]">Lesson editing is currently limited to JSON import/export in this version.</p>
+                  </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                  <button onClick={handleCloseModal} className="flex-1 py-4 rounded-2xl bg-white/5 text-slate-400 font-bold hover:bg-white/10 transition-colors">CANCEL</button>
+                  <Button onClick={handleSaveModule} className="flex-1 !rounded-2xl !py-4">SAVE CHANGES</Button>
+              </div>
+          </div>
+      </div>
+  );
+
   return (
     <div className="p-6 pt-12 min-h-screen bg-[#0F1115]">
         <div className="mb-8 flex items-center gap-3">
@@ -193,6 +328,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === 'USERS' && renderUsers()}
         {activeTab === 'COURSE' && renderCourse()}
         {activeTab === 'SETTINGS' && renderSettings()}
+        
+        {isEditModalOpen && <EditModal />}
     </div>
   );
 };

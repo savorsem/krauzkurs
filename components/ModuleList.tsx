@@ -13,9 +13,18 @@ interface ModuleListProps {
   onProfileClick: () => void;
   onNotebookAction: (type: 'HABIT' | 'GOAL' | 'GRATITUDE' | 'SUGGESTION') => void;
   theme?: ThemeConfig;
+  onEditModule?: (module: Module) => void;
 }
 
-export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, onSelectLesson, onProfileClick, onNotebookAction, theme }) => {
+export const ModuleList: React.FC<ModuleListProps> = ({ 
+    modules, 
+    userProgress, 
+    onSelectLesson, 
+    onProfileClick, 
+    onNotebookAction, 
+    theme,
+    onEditModule 
+}) => {
   const [activeCategory, setActiveCategory] = useState<ModuleCategory | 'ALL'>('ALL');
   const [scrollPos, setScrollPos] = useState(0);
   const [hoveredModuleId, setHoveredModuleId] = useState<string | null>(null);
@@ -50,47 +59,51 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
       return filtered;
   }, [modules, activeCategory, userProgress.role, userProgress.completedModuleIds]);
 
-  // Visual helper for categories
+  // Visual helper for categories with enhanced gradients
   const getModuleVisuals = (category: ModuleCategory) => {
     switch(category) {
       case 'SALES': return {
-          gradient: 'from-[#0F172A] to-[#1E3A8A]',
-          border: 'border-blue-500/20',
-          shadow: 'shadow-blue-500/10',
+          gradient: 'from-[#0F172A] via-[#1E3A8A] to-[#172554]',
+          border: 'border-blue-500/30',
+          shadow: 'shadow-[0_10px_40px_-10px_rgba(59,130,246,0.3)]',
           icon: '💰',
           accentColor: 'text-blue-400',
           barColor: 'bg-blue-500',
+          hoverBorder: 'group-hover:border-blue-500/50',
       };
       case 'PSYCHOLOGY': return {
-          gradient: 'from-[#2E1065] to-[#581C87]',
-          border: 'border-purple-500/20',
-          shadow: 'shadow-purple-500/10',
+          gradient: 'from-[#2E1065] via-[#581C87] to-[#3B0764]',
+          border: 'border-purple-500/30',
+          shadow: 'shadow-[0_10px_40px_-10px_rgba(147,51,234,0.3)]',
           icon: '🧠',
           accentColor: 'text-purple-400',
           barColor: 'bg-purple-500',
+          hoverBorder: 'group-hover:border-purple-500/50',
       };
       case 'TACTICS': return {
-          gradient: 'from-[#450A0A] to-[#7F1D1D]',
-          border: 'border-red-500/20',
-          shadow: 'shadow-red-500/10',
+          gradient: 'from-[#450A0A] via-[#7F1D1D] to-[#450A0A]',
+          border: 'border-red-500/30',
+          shadow: 'shadow-[0_10px_40px_-10px_rgba(239,68,68,0.3)]',
           icon: '⚔️',
           accentColor: 'text-red-400',
           barColor: 'bg-red-500',
+          hoverBorder: 'group-hover:border-red-500/50',
       };
       default: return { // GENERAL
-          gradient: 'from-[#1F2128] to-[#1A1C23]',
-          border: 'border-[#D4AF37]/20',
-          shadow: 'shadow-[#D4AF37]/10',
+          gradient: 'from-[#1F2128] via-[#2D2A4A] to-[#1A1C23]',
+          border: 'border-[#D4AF37]/30',
+          shadow: 'shadow-[0_10px_40px_-10px_rgba(212,175,55,0.15)]',
           icon: '🛡️',
           accentColor: 'text-[#D4AF37]',
           barColor: 'bg-[#D4AF37]',
+          hoverBorder: 'group-hover:border-[#D4AF37]/50',
       };
     }
   };
 
   const DailyBriefing = () => (
-      <div className="mx-6 mt-6 mb-8 p-6 rounded-[2.5rem] bg-gradient-to-r from-[#1F2128] to-[#131419] border border-white/5 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl pointer-events-none">🎯</div>
+      <div className="mx-6 mt-6 mb-8 p-6 rounded-[2.5rem] bg-gradient-to-r from-[#1F2128] to-[#131419] border border-white/5 relative overflow-hidden shadow-2xl group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl pointer-events-none group-hover:scale-110 transition-transform duration-700">🎯</div>
           <div className="relative z-10">
               <div className="flex justify-between items-start mb-4">
                   <div>
@@ -102,7 +115,9 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                   </div>
               </div>
               <div className="w-full h-2 bg-black/50 rounded-full overflow-hidden mb-2">
-                  <div className="h-full bg-gradient-to-r from-[#6C5DD3] to-[#00CEFF] w-[45%]"></div>
+                  <div className="h-full bg-gradient-to-r from-[#6C5DD3] to-[#00CEFF] w-[45%] relative overflow-hidden">
+                       <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
               </div>
               <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 tracking-widest">
                   <span>Прогресс дня</span>
@@ -179,28 +194,44 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                 return (
                     <div 
                         key={module.id}
-                        onClick={() => {
-                            if (!isLocked) {
-                                const nextLesson = module.lessons.find(l => !userProgress.completedLessonIds.includes(l.id)) || module.lessons[0];
-                                if(nextLesson) onSelectLesson(nextLesson);
-                            }
-                        }}
                         onMouseEnter={() => setHoveredModuleId(module.id)}
                         onMouseLeave={() => setHoveredModuleId(null)}
                         className={`
                             relative w-full min-h-[200px] flex flex-col justify-end p-6 overflow-hidden transition-all duration-300 group rounded-[2.5rem] border backdrop-blur-md
                             ${isLocked 
                                 ? 'opacity-75 grayscale filter cursor-not-allowed border-white/5 bg-[#1F2128]' 
-                                : `cursor-pointer hover:scale-[1.02] ${visuals.border} ${visuals.shadow} bg-gradient-to-br ${visuals.gradient}`
+                                : `cursor-pointer hover:scale-[1.02] ${visuals.border} ${visuals.shadow} bg-gradient-to-br ${visuals.gradient} ${visuals.hoverBorder}`
                             }
                         `}
                         style={{ borderRadius: radius }}
+                        onClick={(e) => {
+                             // Prevent click if clicking on EDIT button
+                             if ((e.target as HTMLElement).closest('button')) return;
+
+                             if (!isLocked) {
+                                const nextLesson = module.lessons.find(l => !userProgress.completedLessonIds.includes(l.id)) || module.lessons[0];
+                                if(nextLesson) onSelectLesson(nextLesson);
+                            }
+                        }}
                     >
                         {/* Background Image Overlay */}
                         <div 
                             className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay group-hover:scale-110 transition-transform duration-700"
                             style={{ backgroundImage: `url(${module.imageUrl})` }}
                         ></div>
+                        
+                        {/* Edit Button for Admin */}
+                        {userProgress.role === 'ADMIN' && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditModule?.(module);
+                                }}
+                                className="absolute top-4 right-4 z-30 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase px-3 py-2 rounded-xl transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                            >
+                                <span>✏️</span> EDIT
+                            </button>
+                        )}
 
                         {/* Content */}
                         <div className="relative z-20">
@@ -213,21 +244,23 @@ export const ModuleList: React.FC<ModuleListProps> = ({ modules, userProgress, o
                                 {isLocked && <span className="text-xl">🔒</span>}
                             </div>
 
-                            <h3 className="text-2xl font-black text-white leading-tight mb-2 uppercase tracking-tight">
+                            <h3 className="text-2xl font-black text-white leading-tight mb-2 uppercase tracking-tight drop-shadow-lg">
                                 {module.title}
                             </h3>
                             
-                            <p className="text-xs font-medium text-slate-400 line-clamp-2 mb-4">
+                            <p className="text-xs font-medium text-slate-300/80 line-clamp-2 mb-4 drop-shadow-md">
                                 {module.description}
                             </p>
 
                             {/* Progress Bar */}
                             <div className="mt-auto">
-                                <div className="h-1 w-full bg-black/30 rounded-full overflow-hidden backdrop-blur-sm">
+                                <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
                                     <div 
-                                        className={`h-full transition-all duration-1000 ${visuals.barColor}`} 
+                                        className={`h-full transition-all duration-1000 ${visuals.barColor} relative`} 
                                         style={{ width: `${progressPercentage}%` }}
-                                    ></div>
+                                    >
+                                        <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
